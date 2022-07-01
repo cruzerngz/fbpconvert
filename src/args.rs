@@ -17,7 +17,7 @@ pub struct CliArgs {
 #[derive(Parser, Debug)]
 pub enum SubCommands {
 
-    /// Import a blueprint string to a JSON tree
+    /// Import a blueprint string as a single file or a JSON tree
     #[clap(arg_required_else_help = true)]
     Import {
         /// Infile containing blueprint string

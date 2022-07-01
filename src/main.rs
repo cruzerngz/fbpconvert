@@ -18,16 +18,6 @@ fn main() {
             infile,
             destination,
         } => {
-            // println!(
-            //     "TODO: Import string from file {:?} and write JSON tree to {:?}",
-            //     &infile,
-            //     &destination
-            // );
-
-            // let file_contents = fs::read(infile.as_ref().unwrap()).expect("Invalid file path!");
-            // let blueprint_str_json = common::factorio_inflate(std::str::from_utf8(&file_contents).unwrap());
-            // println!("JSON object string:\n{:?}", blueprint_str_json.unwrap_or("".to_string()));
-
             match infile {
                 Some(file_path) => {
                     match common::PathType::classify(&file_path.as_str()) {

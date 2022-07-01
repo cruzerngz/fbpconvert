@@ -99,7 +99,7 @@ impl Worker {
         }
     }
 
-    /// Recursively writes the book and its contents to file
+    /// Recursively writes the book and its contents to file, given a known starting dir
     fn recursive_book_write(bp_book: &serde_json::Value, dir_path: &PathBuf) -> Result<(), ()> {
 
         // println!("Blueprint book full: {:?}", bp_book);
@@ -115,17 +115,20 @@ impl Worker {
         new_starting_dir.push(&book_details.blueprint_book.label);
         match fs::create_dir_all(&new_starting_dir) {
             Ok(_) => {
-                println!("created dir {}", &new_starting_dir.to_string_lossy());
+                println!("Created dir {}", &new_starting_dir.to_string_lossy());
             },
             Err(_) => {
-                println!("error creating dir {}", &new_starting_dir.to_string_lossy());
+                println!("Error creating dir {}", &new_starting_dir.to_string_lossy());
             }
         }
 
         // write blueprint book details inside starting dir
+        // blueprint book details are stored in a dotfile that matches the dir name
         let mut bp_book_path = dir_path.clone();
+        let mut bp_book_name = ".".to_string();
+        bp_book_name.push_str(&book_details.blueprint_book.label);
         bp_book_path.push(&book_details.blueprint_book.label);
-        bp_book_path.push(&book_details.blueprint_book.label);
+        bp_book_path.push(bp_book_name);
         bp_book_path.set_extension("json");
 
         let mut bp_book_file = File::create(&bp_book_path)
@@ -144,7 +147,7 @@ impl Worker {
             }
         }
 
-        // get the vector of blueprints
+        // get the arr of blueprints
         let book_contents = bp_book.get("blueprint_book")
             .and_then(|value| value.get("blueprints"))
             .unwrap();

@@ -3,6 +3,8 @@ use std::path::Path;
 
 use serde_json::Value;
 
+use crate::factorio_structs;
+
 /// Various types of paths the program may encounter
 #[derive(Debug)]
 pub enum PathType {
@@ -39,29 +41,27 @@ impl PathType {
 }
 
 impl BlueprintType {
-    /// Determines the blueprint type, returning an enum
+    /// Determines the blueprint type, returning an enum with the enclosing blueprint's name
     pub fn classify(given_bp: &Value) -> BlueprintType {
-        if given_bp["blueprint_book"] != serde_json::Value::Null {
-            return BlueprintType::Book(
-                given_bp.get("blueprint_book")
-                    .and_then(|value| value.get("label"))
-                    .and_then(|value| value.as_str())
-                    .unwrap()
-                    .to_string()
-            );
+
+        let unknown_bp_type:factorio_structs::UnknownBlueprintType = serde_json::from_value(given_bp.clone())
+            .expect("failed to serialize unknown blueprint type");
+
+        match unknown_bp_type.blueprint_book {
+            Some(bp_book) => {
+                return BlueprintType::Book(bp_book.label);
+            }
+            None => ()
         }
-        else if given_bp["blueprint"] != serde_json::Value::Null {
-            return BlueprintType::Blueprint(
-                given_bp.get("blueprint")
-                    .and_then(|value| value.get("label"))
-                    .and_then(|value| value.as_str())
-                    .unwrap()
-                    .to_string()
-            );
+
+        match unknown_bp_type.blueprint {
+            Some(bp) => {
+                return BlueprintType::Blueprint(bp.label);
+            }
+            None => ()
         }
-        else {
-            return BlueprintType::Invalid;
-        }
+
+        return BlueprintType::Invalid;
     }
 }
 

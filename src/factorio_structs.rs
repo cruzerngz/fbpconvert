@@ -1,3 +1,7 @@
+//! Contains various structs that corresponds to objects used in this program.
+//!
+//! References the [official factorio wiki](https://wiki.factorio.com/Blueprint_string_format).
+
 use serde::{Deserialize, Serialize};
 
 /// Head of the blueprint book
@@ -6,20 +10,41 @@ pub struct BookHead {
     pub blueprint_book: Book
 }
 
-/// Contains blueprint book parameters
+/// Head of blueprint
+#[derive(Serialize, Deserialize, Debug)]
+pub struct BlueprintHead {
+    pub blueprint: Blueprint
+}
+
+/// Blueprint book parameters
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Book {
-    pub item: String,
+    pub item: Option<String>,
     pub label: String,
     pub label_color: Option<Color>,
     pub active_index: u32,
     pub version: u64
 }
 
+/// Blueprint parameters except arrays
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Blueprint {
+    pub item: Option<String>,
+    pub label: String,
+    pub label_color: Option<Color>,
+    pub version: u64
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Color {
-    r: f32,
-    g: f32,
-    b: f32,
-    a: f32
+    pub r: f32,
+    pub g: f32,
+    pub b: f32,
+    pub a: f32
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct UnknownBlueprintType {
+    pub blueprint_book: Option<Book>,
+    pub blueprint: Option<Blueprint>
 }
