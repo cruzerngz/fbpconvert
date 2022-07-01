@@ -1,0 +1,19 @@
+[package]
+name = "fbpconvert"
+description = "A command line factorio blueprint converter"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+serde = {version = "1.0.137", features = ["derive"]}
+serde_json = "1.0.82"
+base64 = "0.13.0"
+inflate = "0.4.5"
+deflate = "1.0.0"
+clap = {version = "3.2.7", features = ["derive"]}
+
+[profile.release]
+# strip = true
+lto = true
