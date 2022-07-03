@@ -32,13 +32,9 @@ pub enum SubCommands {
     /// Export a single file or JSON tree as a blueprint string
     #[clap(arg_required_else_help = true)]
     Export {
-        /// Source directory or JSON file
+        /// Source directory or single JSON file
         #[clap(value_parser)]
         source: Option<String>,
-
-        /// Infile, for single blueprints
-        #[clap(short, long)]
-        infile: Option<String>,
 
         /// Outfile containing blueprint string
         #[clap(short, long)]

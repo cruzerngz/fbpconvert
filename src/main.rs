@@ -3,6 +3,7 @@ mod import;
 mod export;
 mod common;
 mod factorio_structs;
+mod progress;
 
 use std::{fs, process::exit};
 
@@ -43,9 +44,8 @@ fn main() {
         },
 
         SubCommands::Export {
-            infile,
-            outfile,
-            source
+            source,
+            outfile
         } => {
             println!(
                 "TODO: Export JSON tree from {:?} and write blueprint string to {:?}",

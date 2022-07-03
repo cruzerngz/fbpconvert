@@ -23,7 +23,10 @@ pub struct Book {
     pub label: String,
     pub label_color: Option<Color>,
     pub active_index: u32,
-    pub version: u64
+    pub version: u64,
+
+    /// Blueprint order in book, not part of factorio spec.
+    pub order: Option<Vec<UnknownBlueprintType>>
 }
 
 /// Blueprint parameters except arrays
