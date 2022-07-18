@@ -5,7 +5,7 @@ mod common;
 mod factorio_structs;
 mod progress;
 
-use std::{fs, process::exit};
+use std::process::exit;
 
 use args::*;
 use clap::Parser;
@@ -47,23 +47,10 @@ fn main() {
             source,
             outfile
         } => {
-            println!(
-                "TODO: Export JSON tree from {:?} and write blueprint string to {:?}",
-                &source,
-                &outfile
-            );
 
-
-            let file_contents = fs::read(source.as_ref().unwrap()).expect("Invalid file path!");
-            let blueprint_str = common::factorio_deflate(
-                std::str::from_utf8(&file_contents).unwrap()
-            );
-
-            println!("Blueprint string:\n{:?}", blueprint_str);
             let export_args = export::Worker {
-                source: source.clone(),
-                out_file: outfile.clone(),
-                source_path: None
+                source: source.clone().unwrap(),
+                out_file: outfile.clone()
             };
 
             export_args.exec();

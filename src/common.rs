@@ -5,6 +5,8 @@ use serde_json::Value;
 
 use crate::factorio_structs;
 
+pub const INVALID_CHARS: &str = r#"/\<>:"|?*"#;
+
 /// Various types of paths the program may encounter
 #[derive(Debug)]
 pub enum PathType {
@@ -102,6 +104,22 @@ pub fn factorio_deflate(bp_string_json: &str) -> String {
     result.push_str(&encoded);
 
     return result;
+}
+
+/// Replaces all invalid characters in file names with underscores
+pub fn file_rename(file_name: String) -> String {
+    let mut new_file_name: String = String::new();
+
+    for character in file_name.chars() {
+        if INVALID_CHARS.contains(character) {
+            println!("invalid character {}", &character);
+            new_file_name.push('_');
+        } else {
+            new_file_name.push(character);
+        }
+    }
+
+    return new_file_name;
 }
 
 /// Remove any pretty-printed indentations from the json string

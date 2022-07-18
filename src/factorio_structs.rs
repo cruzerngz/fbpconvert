@@ -4,19 +4,65 @@
 
 use serde::{Deserialize, Serialize};
 
+/// Structs defined here have a subset of attributes of their factorio equivalents.
+pub mod fragments {
+    use super::*;
+
+    /// Blueprint parameters except arrays
+    #[derive(Serialize, Deserialize, Debug)]
+    pub struct BlueprintFragment {
+        pub item: Option<String>,
+        pub label: String,
+        pub label_color: Option<Color>,
+        pub version: u64
+    }
+
+    /// Blueprint book
+    #[derive(Serialize, Deserialize, Debug)]
+    pub struct BookFragment {
+        pub item: Option<String>,
+        pub label: String,
+        pub label_color: Option<Color>,
+        pub active_index: u32,
+        pub version: u64
+    }
+}
+
+/// Structs that are valid for use in import only.
+/// Importing is converting a blueprint string to files.
+pub mod importable {
+    use super::*;
+
+}
+
+/// Structs that are valid for use in export only.
+/// Exporting is converting a directory or a JSON file to a blueprint string.
+pub mod exportable {
+    use super::*;
+
+}
+
 /// Head of the blueprint book
 #[derive(Serialize, Deserialize, Debug)]
 pub struct BookHead {
     pub blueprint_book: Book
 }
 
-/// Head of blueprint
 #[derive(Serialize, Deserialize, Debug)]
-pub struct BlueprintHead {
-    pub blueprint: Blueprint
+pub struct BookDotFileHead {
+    pub blueprint_book: BookDotFile
 }
 
-/// Blueprint book parameters
+/// Head of blueprint, to factorio spec
+#[derive(Serialize, Deserialize, Debug)]
+pub struct BlueprintHead {
+    pub blueprint: Blueprint,
+
+    #[serde(skip_serializing)]
+    pub index: u16
+}
+
+/// Blueprint book with additional parameter containing the order of it's child blueprints
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Book {
     pub item: Option<String>,
@@ -25,17 +71,58 @@ pub struct Book {
     pub active_index: u32,
     pub version: u64,
 
+    #[serde(skip_deserializing)]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub blueprints: Option<Vec<serde_json::Value>>,
+
     /// Blueprint order in book, not part of factorio spec.
+    /// Used for storing the blueprint order inside a book
+    /// Contains the child blueprints/books, renamed to "order"
+    #[serde(rename(serialize = "order", deserialize = "blueprints"))]
     pub order: Option<Vec<UnknownBlueprintType>>
 }
 
-/// Blueprint parameters except arrays
 #[derive(Serialize, Deserialize, Debug)]
-pub struct Blueprint {
+pub struct BookDotFile {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub item: Option<String>,
     pub label: String,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub label_color: Option<Color>,
-    pub version: u64
+    pub active_index: u32,
+    pub version: u64,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub blueprints: Option<Vec<serde_json::Value>>,
+
+    /// Blueprint order in book, not part of factorio spec.
+    /// This attribute is not serialized
+    #[serde(skip_serializing)]
+    pub order: Option<Vec<UnknownBlueprintType>>
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Blueprint {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub item: Option<String>,
+    pub label: String,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub label_color: Option<Color>,
+    pub version: u64,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub entities: Option<Vec<serde_json::Value>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tiles: Option<Vec<serde_json::Value>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub icons: Option<Vec<serde_json::Value>>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub schedules: Option<Vec<serde_json::Value>>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -48,6 +135,9 @@ pub struct Color {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct UnknownBlueprintType {
-    pub blueprint_book: Option<Book>,
-    pub blueprint: Option<Blueprint>
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub blueprint_book: Option<fragments::BookFragment>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub blueprint: Option<fragments::BlueprintFragment>
 }

@@ -36,7 +36,7 @@ pub enum SubCommands {
         #[clap(value_parser)]
         source: Option<String>,
 
-        /// Outfile containing blueprint string
+        /// Outfile (optional), containing blueprint string
         #[clap(short, long)]
         outfile: Option<String>
     }
