@@ -8,6 +8,9 @@ use crate::factorio_structs;
 use crate::common;
 use crate::progress::{self, ProgressType};
 
+/// Prefix for exported blueprints
+const PREFIX_OUT: &str = "fbpconvert-bp_";
+
 pub struct Worker {
     pub source: String,
     pub out_file: Option<String>,
@@ -296,7 +299,7 @@ impl Worker {
                         destination = name;
                     }
                 }
-                destination = format!("blueprint_{}", destination);
+                destination = format!("{}{}",PREFIX_OUT, destination);
             }
         }
 
