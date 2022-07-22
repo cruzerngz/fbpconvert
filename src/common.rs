@@ -4,7 +4,7 @@ use serde_json::Value;
 
 use crate::factorio_structs;
 
-pub const INVALID_CHARS: &str = r#"/\<>:"|?*"#;
+pub const INVALID_CHARS: &str = r#" /\<>:"|?*"#;
 
 /// Various types of paths the program may encounter
 #[derive(Debug)]

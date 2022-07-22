@@ -174,7 +174,7 @@ impl Worker {
         dot_file_path.push(book_dot_file_name);
         dot_file_path.set_extension("json");
         let mut dot_file: File;
-        match File::create(dot_file_path) {
+        match File::create(&dot_file_path) {
             Ok(_f) => {
                 dot_file = _f;
             },
