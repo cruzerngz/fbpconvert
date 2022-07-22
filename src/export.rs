@@ -90,17 +90,25 @@ impl Worker {
     fn read_blueprint(bp_file_path: &PathBuf) -> Result<Value, String> {
 
         // println!("reading: {:?}", &bp_file_path);
+        // let mut bp_mod_path = bp_file_path.clone();
+        // for mut sub_path in &mut bp_mod_path.iter() {
+        //     let mut sub_path_string = sub_path.to_str().unwrap().to_string();
+        //     sub_path_string = common::file_rename(sub_path_string);
+
+        //     sub_path = std::ffi::OsStr::new(&sub_path_string);
+        // }
 
         if !bp_file_path.is_file() {
-            return Err(bp_file_path.to_str().unwrap().to_string());
+            println!("{:?}", bp_file_path);
+            return Err("not a file".to_string());
         }
         match bp_file_path.extension() {
             None => {
-                return Err(bp_file_path.to_str().unwrap().to_string())
+                return Err("no file extension".to_string())
             }
             Some(file_ext) => {
                 if !file_ext.eq_ignore_ascii_case("json") {
-                    return Err(bp_file_path.to_str().unwrap().to_string())
+                    return Err("wrong file extension".to_string())
                 }
             }
         }
@@ -145,14 +153,14 @@ impl Worker {
         let dot_file_contents: String;
         match fs::read_to_string(&dot_file_path) {
             Ok(_file) => dot_file_contents = _file,
-            Err(_) => return Err(format!("failed to read {}", &dot_file_path.to_string_lossy()))
+            Err(_) => return Err("failed to read file".to_string())
         }
 
         let mut book_object: factorio_structs::BookDotFileHead;
 
         match serde_json::from_str(dot_file_contents.as_ref()) {
             Ok(_book) => book_object = _book,
-            Err(_) => return Err(format!("failed to deserialize contents of {}", &dot_file_path.to_string_lossy()))
+            Err(_) => return Err("failed to deserialize contents".to_string())
         }
 
         book_object.blueprint_book.blueprints = Some(vec![]);
@@ -263,36 +271,6 @@ impl Worker {
                 Err("failed to convert typed struct to serde_json::Value".to_string())
             }
         }
-        // todo!()
-        // let bp_book_name = bp_book_dir_path.file_name().unwrap();
-        // let mut bp_book_file: PathBuf = bp_book_dir_path.clone();
-        // bp_book_file.push(bp_book_name);
-        // bp_book_file.set_extension("json");
-
-        // let mut bp_book_json: Value;
-        // if bp_book_file.exists() {
-        //     bp_book_json = serde_json::from_str(
-        //         fs::read_to_string(&bp_book_file)
-        //             .expect("Error reading file")
-        //             .as_str()
-        //     )
-        //         .expect("Error serializing string");
-        // } else {
-        //     return Err(format!("{:?} does not exist", bp_book_name));
-        // }
-
-        // // This variable contains the typed vector of UnknownBlueprintType
-        // // that is used to reconstruct the book
-        // let bp_book: factorio_structs::Book = serde_json::from_value(bp_book_json.clone()).unwrap();
-
-        // // the "order" key is consumed internally
-        // let bp_obj = bp_book_json.as_object_mut()
-        //     .unwrap();
-
-        // bp_obj.remove("order");
-
-
-
 
     }
 

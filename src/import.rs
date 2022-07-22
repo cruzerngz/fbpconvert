@@ -4,7 +4,6 @@ use std::path::PathBuf;
 use std::process::exit;
 use std::fs::File;
 
-use crate::factorio_structs::UnknownBlueprintType;
 use crate::{common, factorio_structs};
 use crate::common::{BlueprintType, PathType};
 use crate::progress::{self, ProgressType};
@@ -86,13 +85,14 @@ impl Worker {
             .to_string();
 
         // remove "index" key from the blueprint object
-        let blueprint_compliant: factorio_structs::BlueprintHead;
+        let mut blueprint_compliant: factorio_structs::BlueprintHead;
         match serde_json::from_value(blueprint.to_owned()) {
             Ok(result) => blueprint_compliant = result,
             Err(_) => return Err("Error deserializing to compliant blueprint".to_string())
         }
 
         bp_name = common::file_rename(bp_name);
+        blueprint_compliant.blueprint.label = bp_name.clone();
 
         full_bp_path.push(&bp_name);
         full_bp_path.set_extension("json");
@@ -123,97 +123,103 @@ impl Worker {
     fn recursive_book_write(
         prog_tracker: &mut progress::Tracker,
         bp_book: &serde_json::Value,
-        dir_path: &PathBuf
+        bp_book_dir: &PathBuf
     ) -> Result<(), String> {
 
-        // println!("Blueprint book full: {:?}", bp_book);
-
-        // Extract out only the relavant blueprint contents
-        let mut book_details: factorio_structs::BookHead = serde_json::from_value(bp_book.clone())
-            .expect("Failed to deserialize blueprint book");
-
-        let bp_book_name = book_details.blueprint_book.label.clone();
-
-        // println!("Blueprint book contents: {:?}", &book_details);
-
-        // create new starting dir (for next recursion level)
-        let mut new_starting_dir = dir_path.clone();
-        new_starting_dir.push(&book_details.blueprint_book.label);
-        match fs::create_dir_all(&new_starting_dir) {
-            Ok(_) => {
-                // println!("Created dir {}", &new_starting_dir.to_string_lossy());
+        // local_book_copy contains dotfile information
+        let mut book_dot_file: factorio_structs::BookHead;
+        match serde_json::from_value(bp_book.clone()) {
+            Ok(_val) => {
+                book_dot_file = _val
             },
-            Err(_) => {
-                // println!("Error creating dir {}", &new_starting_dir.to_string_lossy());
-                return Err(format!("error creating dir {}", &new_starting_dir.to_string_lossy()));
+            Err(_) => return Err("failed to deserialize blueprint book".to_string())
+        }
+
+        // remove invalid characters from book by renaming
+        book_dot_file.blueprint_book.label = common::file_rename(book_dot_file.blueprint_book.label);
+        // book dotfile name, resides in book directory
+        let mut book_dot_file_name = ".".to_string();
+        book_dot_file_name.push_str(&book_dot_file.blueprint_book.label);
+
+        // new starting dir for next recursion level
+        let mut current_dir_path = bp_book_dir.clone();
+        current_dir_path.push(&book_dot_file.blueprint_book.label);
+
+        // iterator for the contents of dotfile book
+        // rename all names in dotfile (remove invalid chars)
+        if let Some(ref mut _order) = book_dot_file.blueprint_book.order {
+            for _unknown in _order.iter_mut() {
+                match _unknown.blueprint.as_mut() {
+                    Some(_bp) => {
+                        _bp.label = common::file_rename(_bp.label.clone());
+                    },
+                    None => (),
+                }
+                match _unknown.blueprint_book.as_mut() {
+                    Some(_book) => {
+                        _book.label = common::file_rename(_book.label.clone());
+                    },
+                    None => (),
+                }
             }
         }
 
-        // write blueprint book details inside starting dir
-        // blueprint book details are stored in a dotfile that matches the dir name
-        let mut bp_book_path = dir_path.clone();
-        let mut bp_book_name = ".".to_string();
+        // write the dotfile first, then constituent blueprints/books
+        match fs::create_dir_all(&current_dir_path) {
+            Ok(_) => (),
+            Err(_) => return Err("error creating blueprint book directory".to_string())
+        }
 
-        bp_book_name = common::file_rename(bp_book_name);
-        bp_book_name.push_str(&book_details.blueprint_book.label);
-        bp_book_path.push(&book_details.blueprint_book.label);
-        bp_book_path.push(&bp_book_name);
-        bp_book_path.set_extension("json");
+        let mut dot_file_path = current_dir_path.clone();
+        dot_file_path.push(book_dot_file_name);
+        dot_file_path.set_extension("json");
+        let mut dot_file: File;
+        match File::create(dot_file_path) {
+            Ok(_f) => {
+                dot_file = _f;
+            },
+            Err(_) => return Err("dotfile unable to be created".to_string())
+        }
 
-        let mut bp_book_file = File::create(&bp_book_path)
-        .expect("File creation error.");
-
-        match bp_book_file.write(
-            serde_json::to_string_pretty(&book_details)
-            .unwrap()
-            .as_bytes()
+        match dot_file.write(
+            serde_json::to_string_pretty(&book_dot_file)
+            .unwrap().
+            as_bytes()
         ) {
-            Ok(_) => {
-                // println!("Created {}", &bp_book_path.to_string_lossy());
-            }
-            Err(_) => {
-                // println!("Error creating {}", &bp_book_path.to_string_lossy());
-                return Err(format!("error creating {}", &bp_book_path.to_string_lossy()));
-            }
+            Ok(_) => {},
+            Err(_) => return Err("error writing to dotfile".to_string()),
         }
 
-        book_details.blueprint_book.order;
-
-        // get the arr of blueprints
+        // get the vec of stuff
         let book_contents = bp_book.get("blueprint_book")
             .and_then(|value| value.get("blueprints"))
             .unwrap();
 
-        book_details.blueprint_book.order = Some(vec!());
-
-        // recurse
+        // recurse for all constituent blueprints/books
         match book_contents {
             serde_json::Value::Array(bp_arr) => {
-                for bp_arr_item in bp_arr.iter() {
-                    // store the order of blueprint book items
-                    // bp_book_order =
-                    // then recurse
-                    match BlueprintType::classify(bp_arr_item) {
-                        BlueprintType::Invalid => (), // ignore
+                for unknown_bp in bp_arr.iter() {
+                    match BlueprintType::classify(&unknown_bp) {
+
+                        BlueprintType::Invalid => (),
 
                         BlueprintType::Book(_book_name) => {
-                            // set order to none in child blueprints
-                            // bp_arr_item.get("order")
-                                // .and_then(|val| val.get());
+                            // if let Some(bp) = dot_file_book.blueprint_book {
+                            //     bp.label = common::file_rename(bp.label.clone());
+                            // }
 
-                            // perform recursive write
-                            match Worker::recursive_book_write(prog_tracker, bp_arr_item, &new_starting_dir) {
+                            match Worker::recursive_book_write(prog_tracker, unknown_bp, &current_dir_path) {
                                 Ok(()) => prog_tracker.ok(ProgressType::Book(_book_name)),
                                 Err(err_msg) => prog_tracker.error(ProgressType::Book(_book_name), Some(err_msg))
                             }
                         },
 
                         BlueprintType::Blueprint(_bp_name) => {
-                            match Worker::blueprint_write(bp_arr_item, &new_starting_dir) {
+                            match Worker::blueprint_write(unknown_bp, &current_dir_path) {
                                 Ok(()) => prog_tracker.ok(ProgressType::Blueprint(_bp_name)),
                                 Err(err_msg) => prog_tracker.error(ProgressType::Blueprint(_bp_name), Some(err_msg))
                             }
-                        }
+                        },
                     }
                 }
             }

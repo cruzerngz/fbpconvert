@@ -1,4 +1,3 @@
-use std::fs;
 use std::path::Path;
 
 use serde_json::Value;
@@ -112,7 +111,7 @@ pub fn file_rename(file_name: String) -> String {
 
     for character in file_name.chars() {
         if INVALID_CHARS.contains(character) {
-            println!("invalid character {}", &character);
+            // println!("invalid character {}", &character);
             new_file_name.push('_');
         } else {
             new_file_name.push(character);
@@ -121,12 +120,3 @@ pub fn file_rename(file_name: String) -> String {
 
     return new_file_name;
 }
-
-/// Remove any pretty-printed indentations from the json string
-pub fn json_remove_indents(json_indent_str: &str) -> String {
-    let json_object: serde_json::Value = serde_json::from_str(json_indent_str)
-        .expect("JSON parse error. Check that blueprint string is valid.");
-
-    return json_object.to_string();
-}
-
