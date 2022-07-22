@@ -143,7 +143,7 @@ mod test {
             } else {
                 progress_indicator.ok(Blueprint(format!("everyting is going well: {}", i)));
             }
-            thread::sleep(time::Duration::from_millis(50));
+            thread::sleep(time::Duration::from_millis(15));
         }
 
         progress_indicator.complete();

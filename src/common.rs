@@ -120,3 +120,65 @@ pub fn file_rename(file_name: String) -> String {
 
     return new_file_name;
 }
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn test_classify_invalid_empty() {
+        assert!(matches!(
+            BlueprintType::classify(
+                &json!({})
+            ),
+            BlueprintType::Invalid
+        ));
+    }
+
+    #[test]
+    fn test_classify_invalid_nonsense() {
+        assert!(matches!(
+            BlueprintType::classify(
+                &json!({
+                    "blueprints": {
+                        "asd": "xyz"
+                    }
+                })
+            ),
+            BlueprintType::Invalid
+        ));
+    }
+
+    #[test]
+    fn test_classify_valid_bp() {
+        assert!(matches!(
+            BlueprintType::classify(
+                &json!({
+                    "blueprint": {
+                        "item": "asd",
+                        "label": "blueprint_thang",
+                        "version": 1234567890
+                    }
+                })
+            ),
+            BlueprintType::Blueprint(_)
+        ));
+    }
+    #[test]
+    fn test_classify_valid_book() {
+        assert!(matches!(
+            BlueprintType::classify(
+                &json!({
+                    "blueprint_book": {
+                        "item": "asd",
+                        "label": "blueprint_thang",
+                        "active_index": 0,
+                        "version": 1234567890
+                    }
+                })
+            ),
+            BlueprintType::Book(_)
+        ));
+    }
+}

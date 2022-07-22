@@ -22,7 +22,6 @@ impl Worker {
     /// Main calling method for struct
     pub fn exec(&self) {
         let source_path = PathBuf::from(&self.source);
-        let root_bp_dir = source_path.file_name();
 
         let mut progress_tracker = progress::Tracker::new(progress::CommandType::Export);
         let mut read_json_value =  serde_json::json!({});
@@ -92,15 +91,6 @@ impl Worker {
     /// Returns an error message if an error occurs
     fn read_blueprint(bp_file_path: &PathBuf) -> Result<Value, String> {
 
-        // println!("reading: {:?}", &bp_file_path);
-        // let mut bp_mod_path = bp_file_path.clone();
-        // for mut sub_path in &mut bp_mod_path.iter() {
-        //     let mut sub_path_string = sub_path.to_str().unwrap().to_string();
-        //     sub_path_string = common::file_rename(sub_path_string);
-
-        //     sub_path = std::ffi::OsStr::new(&sub_path_string);
-        // }
-
         if !bp_file_path.is_file() {
             println!("{:?}", bp_file_path);
             return Err("not a file".to_string());
@@ -123,8 +113,11 @@ impl Worker {
 
         match bp_file {
             Ok(file_contents) => {
-                let json_contents: serde_json::Value = serde_json::from_str(&file_contents.as_str())
-                    .expect("failed to serialize JSON data.");
+                let json_contents: serde_json::Value;
+                match serde_json::from_str(&file_contents.as_str()) {
+                    Ok(_contents) => json_contents = _contents,
+                    Err(_) => return Err("failed to serialize blueprint data".to_string()),
+                }
 
                 return Ok(json_contents);
             },
@@ -318,7 +311,5 @@ impl Worker {
             Err(_) => return Err("serde_json serialize error".to_string())
         }
 
-
-        // todo!();
     }
 }

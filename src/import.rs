@@ -44,8 +44,19 @@ impl Worker {
         let mut progress_tracker = progress::Tracker::new(progress::CommandType::Import);
 
         // convert the string to a json value
-        let blueprint_obj: serde_json::Value = serde_json::from_str(blueprint_inflated.as_str())
-            .expect("JSON parse error. Check that the blueprint string is valid.");
+        let blueprint_obj: serde_json::Value;
+        match serde_json::from_str(blueprint_inflated.as_str()) {
+            Ok(_obj) => {
+                blueprint_obj = _obj;
+            },
+            Err(_) => {
+                progress_tracker.error_additional(
+                    "json parse error. check if blueprint string is valid".to_string()
+                );
+                progress_tracker.complete();
+                exit(1);
+            },
+        }
 
         // let blueprint_file_name: String;
         match BlueprintType::classify(&blueprint_obj) {
@@ -97,8 +108,16 @@ impl Worker {
         full_bp_path.push(&bp_name);
         full_bp_path.set_extension("json");
 
-        let mut bp_file = File::create(&full_bp_path)
-            .expect("File creation error. Check the file path given");
+        let mut bp_file: File;
+
+        match File::create(&full_bp_path) {
+            Ok(_file) => {
+                bp_file = _file
+            },
+            Err(_) => {
+                return Err("file creation error. check the file path".to_string())
+            },
+        }
 
         match bp_file.write(
             serde_json::to_string_pretty(&blueprint_compliant)
@@ -204,9 +223,6 @@ impl Worker {
                         BlueprintType::Invalid => (),
 
                         BlueprintType::Book(_book_name) => {
-                            // if let Some(bp) = dot_file_book.blueprint_book {
-                            //     bp.label = common::file_rename(bp.label.clone());
-                            // }
 
                             match Worker::recursive_book_write(prog_tracker, unknown_bp, &current_dir_path) {
                                 Ok(()) => prog_tracker.ok(ProgressType::Book(_book_name)),
