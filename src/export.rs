@@ -180,20 +180,24 @@ impl Worker {
                                 Ok(_bp_obj) => {
                                     known_bp_object = Some(_bp_obj);
                                     prog_tracker.ok(
-                                        ProgressType::Blueprint(known_bp_path
-                                            .to_str()
-                                            .unwrap()
-                                            .to_string()
+                                        ProgressType::Blueprint(
+                                            known_bp_path.file_name()
+                                                .unwrap()
+                                                .to_str()
+                                                .unwrap()
+                                                .to_string()
                                         )
                                     )
                                 },
                                 Err(err_msg) => {
                                     known_bp_object = None;
                                     prog_tracker.error(
-                                        ProgressType::Blueprint(known_bp_path
-                                            .to_str()
-                                            .unwrap()
-                                            .to_string()
+                                        ProgressType::Blueprint(
+                                            known_bp_path.file_name()
+                                                .unwrap()
+                                                .to_str()
+                                                .unwrap()
+                                                .to_string()
                                         ),
                                         Some(err_msg)
                                     )
@@ -223,7 +227,8 @@ impl Worker {
                                 Ok(_book_obj) => {
                                     known_book_object = Some(_book_obj);
                                     prog_tracker.ok(ProgressType::Book(
-                                        known_book_path
+                                        known_book_path.file_name()
+                                            .unwrap()
                                             .to_str()
                                             .unwrap()
                                             .to_string()
@@ -233,7 +238,8 @@ impl Worker {
                                 Err(err_msg) => {
                                     known_book_object = None;
                                     prog_tracker.error(ProgressType::Book(
-                                        known_book_path
+                                        known_book_path.file_name()
+                                            .unwrap()
                                             .to_str()
                                             .unwrap()
                                             .to_string()
