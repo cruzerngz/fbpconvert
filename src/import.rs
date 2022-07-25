@@ -5,7 +5,9 @@ use std::process::exit;
 use std::fs::File;
 
 use crate::{common, factorio_structs};
-use crate::common::{BlueprintType, PathType};
+use factorio_structs::importable;
+use crate::common::BlueprintType;
+use crate::progress::{self, ProgressType};
 
 pub struct Worker {
     pub in_file: String,
@@ -17,10 +19,15 @@ impl Worker {
 
     /// Main calling method for struct
     pub fn exec(&self) {
+
+        // create new progress tracker instance
+        let mut progress_tracker = progress::Tracker::new(progress::CommandType::Import);
+
         // make the destination dir (if it doesnt exist)
         match fs::create_dir_all(&self.dest) {
             Err(_) => {
                 println!("Error creating deestination directory!");
+                progress_tracker.complete();
                 exit(1);
             },
             Ok(_) => ()
@@ -35,148 +42,205 @@ impl Worker {
             },
             Err(e) => {
                 println!("{}", e);
+                progress_tracker.complete();
                 exit(1);
             }
         }
 
         // convert the string to a json value
-        let blueprint_obj: serde_json::Value = serde_json::from_str(blueprint_inflated.as_str())
-            .expect("JSON parse error. Check that the blueprint string is valid.");
+        let blueprint_obj: serde_json::Value;
+        match serde_json::from_str(blueprint_inflated.as_str()) {
+            Ok(_obj) => {
+                blueprint_obj = _obj;
+            },
+            Err(_) => {
+                progress_tracker.error_additional(
+                    "json parse error. check if blueprint string is valid".to_string()
+                );
+                progress_tracker.complete();
+                exit(1);
+            },
+        }
 
-        let blueprint_file_name: String;
+        // let blueprint_file_name: String;
         match BlueprintType::classify(&blueprint_obj) {
             BlueprintType::Invalid => {
                 println!("Invalid blueprint!");
+                progress_tracker.complete();
                 exit(1);
             }
-            BlueprintType::Blueprint(bp_name) => {
+            BlueprintType::Blueprint(_bp_name) => {
                 match Worker::blueprint_write(&blueprint_obj, &PathBuf::from(&self.dest)) {
-                    Ok(_) => {},
-                    Err(_) => {}
+                    Ok(()) => progress_tracker.ok(ProgressType::Blueprint(_bp_name)),
+                    Err(err_msg) => progress_tracker.error(ProgressType::Blueprint(_bp_name), Some(err_msg))
                 }
             }
-            BlueprintType::Book(book_name) => {
-
-                match Worker::recursive_book_write(&blueprint_obj, &PathBuf::from(&self.dest)) {
-                    Ok(_) => {},
-                    Err(_) => {}
+            BlueprintType::Book(_book_name) => {
+                match Worker::recursive_book_write(&mut progress_tracker, &blueprint_obj, &PathBuf::from(&self.dest)) {
+                    Ok(()) => progress_tracker.ok(ProgressType::Book(_book_name)),
+                    Err(err_msg) => progress_tracker.error(ProgressType::Book(_book_name), Some(err_msg))
                 }
-
-                // blueprint_file_name = book_name;
             }
         }
+
+        progress_tracker.complete();
 
     }
 
     /// Writes a blueprint to file given the file path and blueprint object
-    fn blueprint_write(blueprint: &serde_json::Value, dir_path: &PathBuf) -> Result<(), ()> {
+    /// Returns an error message if encountered
+    fn blueprint_write(
+        blueprint: &serde_json::Value,
+        dir_path: &PathBuf
+    ) -> Result<(), String> {
         let mut full_bp_path = dir_path.clone();
-        let bp_name = blueprint.get("blueprint")
+        let mut bp_name = blueprint.get("blueprint")
             .and_then(|value| value.get("label"))
             .and_then(|value| value.as_str())
             .unwrap()
             .to_string();
 
-        full_bp_path.push(bp_name);
+        // remove "index" key from the blueprint object
+        let mut blueprint_compliant: importable::BlueprintHead;
+        match serde_json::from_value(blueprint.to_owned()) {
+            Ok(result) => blueprint_compliant = result,
+            Err(_) => return Err("Error deserializing to compliant blueprint".to_string())
+        }
+
+        bp_name = common::file_rename(bp_name);
+        blueprint_compliant.blueprint.label = bp_name.clone();
+
+        full_bp_path.push(&bp_name);
         full_bp_path.set_extension("json");
 
-        let mut bp_file = File::create(&full_bp_path)
-            .expect("File creation error. Check the file path given");
+        let mut bp_file: File;
+
+        match File::create(&full_bp_path) {
+            Ok(_file) => {
+                bp_file = _file
+            },
+            Err(_) => {
+                return Err("file creation error. check the file path".to_string())
+            },
+        }
 
         match bp_file.write(
-            serde_json::to_string_pretty(&blueprint)
+            serde_json::to_string_pretty(&blueprint_compliant)
                 .unwrap()
                 .as_bytes()
         ) {
             Ok(_) => {
-                println!("Created {}", &full_bp_path.to_string_lossy());
+                // println!("Created {}", &full_bp_path.to_string_lossy());
                 return Ok(());
             },
             Err(_) => {
-                println!("Error creating {}", &full_bp_path.to_string_lossy());
-                return Err(());
+                // println!("Error creating {}", &full_bp_path.to_string_lossy());
+                return Err(format!("Error creating {}", &full_bp_path.to_string_lossy()));
+                // return Err(bp_name);
             }
         }
+
     }
 
     /// Recursively writes the book and its contents to file, given a known starting dir
-    fn recursive_book_write(bp_book: &serde_json::Value, dir_path: &PathBuf) -> Result<(), ()> {
+    /// Returns an error message if an error is encountered
+    fn recursive_book_write(
+        prog_tracker: &mut progress::Tracker,
+        bp_book: &serde_json::Value,
+        bp_book_dir: &PathBuf
+    ) -> Result<(), String> {
 
-        // println!("Blueprint book full: {:?}", bp_book);
-
-        // Extract out only the relavant blueprint contents
-        let book_details: factorio_structs::BookHead = serde_json::from_value(bp_book.clone())
-            .expect("Failed to deserialize blueprint book");
-
-        // println!("Blueprint book contents: {:?}", &book_details);
-
-        // create new starting dir (for next recursion level)
-        let mut new_starting_dir = dir_path.clone();
-        new_starting_dir.push(&book_details.blueprint_book.label);
-        match fs::create_dir_all(&new_starting_dir) {
-            Ok(_) => {
-                println!("Created dir {}", &new_starting_dir.to_string_lossy());
+        // local_book_copy contains dotfile information
+        let mut book_dot_file: importable::BookHead;
+        match serde_json::from_value(bp_book.clone()) {
+            Ok(_val) => {
+                book_dot_file = _val
             },
-            Err(_) => {
-                println!("Error creating dir {}", &new_starting_dir.to_string_lossy());
+            Err(_) => return Err("failed to deserialize blueprint book".to_string())
+        }
+
+        // remove invalid characters from book by renaming
+        book_dot_file.blueprint_book.label = common::file_rename(book_dot_file.blueprint_book.label);
+        // book dotfile name, resides in book directory
+        let mut book_dot_file_name = ".".to_string();
+        book_dot_file_name.push_str(&book_dot_file.blueprint_book.label);
+
+        // new starting dir for next recursion level
+        let mut current_dir_path = bp_book_dir.clone();
+        current_dir_path.push(&book_dot_file.blueprint_book.label);
+
+        // iterator for the contents of dotfile book
+        // rename all names in dotfile (remove invalid chars)
+        if let Some(ref mut _order) = book_dot_file.blueprint_book.order {
+            for _unknown in _order.iter_mut() {
+                match _unknown.blueprint.as_mut() {
+                    Some(_bp) => {
+                        _bp.label = common::file_rename(_bp.label.clone());
+                    },
+                    None => (),
+                }
+                match _unknown.blueprint_book.as_mut() {
+                    Some(_book) => {
+                        _book.label = common::file_rename(_book.label.clone());
+                    },
+                    None => (),
+                }
             }
         }
 
-        // write blueprint book details inside starting dir
-        // blueprint book details are stored in a dotfile that matches the dir name
-        let mut bp_book_path = dir_path.clone();
-        let mut bp_book_name = ".".to_string();
-        bp_book_name.push_str(&book_details.blueprint_book.label);
-        bp_book_path.push(&book_details.blueprint_book.label);
-        bp_book_path.push(bp_book_name);
-        bp_book_path.set_extension("json");
+        // write the dotfile first, then constituent blueprints/books
+        match fs::create_dir_all(&current_dir_path) {
+            Ok(_) => (),
+            Err(_) => return Err("error creating blueprint book directory".to_string())
+        }
 
-        let mut bp_book_file = File::create(&bp_book_path)
-        .expect("File creation error.");
+        let mut dot_file_path = current_dir_path.clone();
+        dot_file_path.push(book_dot_file_name);
+        dot_file_path.set_extension("json");
+        let mut dot_file: File;
+        match File::create(&dot_file_path) {
+            Ok(_f) => {
+                dot_file = _f;
+            },
+            Err(_) => return Err("dotfile unable to be created".to_string())
+        }
 
-        match bp_book_file.write(
-            serde_json::to_string_pretty(&book_details)
-            .unwrap()
-            .as_bytes()
+        match dot_file.write(
+            serde_json::to_string_pretty(&book_dot_file)
+            .unwrap().
+            as_bytes()
         ) {
-            Ok(_) => {
-                println!("Created {}", &bp_book_path.to_string_lossy());
-            }
-            Err(_) => {
-                println!("Error creating {}", &bp_book_path.to_string_lossy());
-            }
+            Ok(_) => {},
+            Err(_) => return Err("error writing to dotfile".to_string()),
         }
 
-        // get the arr of blueprints
+        // get the vec of stuff
         let book_contents = bp_book.get("blueprint_book")
             .and_then(|value| value.get("blueprints"))
             .unwrap();
 
-        // recurse
+        // recurse for all constituent blueprints/books
         match book_contents {
             serde_json::Value::Array(bp_arr) => {
-                for bp_arr_item in bp_arr.iter() {
-                    match BlueprintType::classify(bp_arr_item) {
-                        BlueprintType::Invalid => (), // ignore
+                for unknown_bp in bp_arr.iter() {
+                    match BlueprintType::classify(&unknown_bp) {
 
-                        BlueprintType::Book(_) => {
-                            // perform recursive write
-                            match Worker::recursive_book_write(bp_arr_item, &new_starting_dir) {
-                                Ok(_) => (),
-                                Err(_) => {
-                                    println!("Book write error: {}", &book_details.blueprint_book.label);
-                                }
+                        BlueprintType::Invalid => (),
+
+                        BlueprintType::Book(_book_name) => {
+
+                            match Worker::recursive_book_write(prog_tracker, unknown_bp, &current_dir_path) {
+                                Ok(()) => prog_tracker.ok(ProgressType::Book(_book_name)),
+                                Err(err_msg) => prog_tracker.error(ProgressType::Book(_book_name), Some(err_msg))
                             }
                         },
 
-                        BlueprintType::Blueprint(sub_bp_name) => {
-                            match Worker::blueprint_write(bp_arr_item, &new_starting_dir) {
-                                Ok(_) => (),
-                                Err(_) => {
-                                    println!("Blueprint write error: {}", &sub_bp_name);
-                                }
+                        BlueprintType::Blueprint(_bp_name) => {
+                            match Worker::blueprint_write(unknown_bp, &current_dir_path) {
+                                Ok(()) => prog_tracker.ok(ProgressType::Blueprint(_bp_name)),
+                                Err(err_msg) => prog_tracker.error(ProgressType::Blueprint(_bp_name), Some(err_msg))
                             }
-                        }
+                        },
                     }
                 }
             }

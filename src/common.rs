@@ -1,9 +1,10 @@
-use std::fs;
 use std::path::Path;
 
 use serde_json::Value;
 
 use crate::factorio_structs;
+
+pub const INVALID_CHARS: &str = r#" /\<>:"|?*"#;
 
 /// Various types of paths the program may encounter
 #[derive(Debug)]
@@ -44,8 +45,19 @@ impl BlueprintType {
     /// Determines the blueprint type, returning an enum with the enclosing blueprint's name
     pub fn classify(given_bp: &Value) -> BlueprintType {
 
-        let unknown_bp_type:factorio_structs::UnknownBlueprintType = serde_json::from_value(given_bp.clone())
-            .expect("failed to serialize unknown blueprint type");
+        // let unknown_bp_type:factorio_structs::UnknownBlueprintType = serde_json::from_value(given_bp.clone())
+        //     .expect("failed to serialize unknown blueprint type");
+
+        let unknown_bp_type: factorio_structs::UnknownBlueprintType;
+        match serde_json::from_value(given_bp.clone()) {
+            Ok(_val) => {
+                unknown_bp_type = _val;
+            },
+            Err(e) => {
+                println!("Error: {}", e);
+                return BlueprintType::Invalid
+            },
+        }
 
         match unknown_bp_type.blueprint_book {
             Some(bp_book) => {
@@ -104,11 +116,80 @@ pub fn factorio_deflate(bp_string_json: &str) -> String {
     return result;
 }
 
-/// Remove any pretty-printed indentations from the json string
-pub fn json_remove_indents(json_indent_str: &str) -> String {
-    let json_object: serde_json::Value = serde_json::from_str(json_indent_str)
-        .expect("JSON parse error. Check that blueprint string is valid.");
+/// Replaces all invalid characters in file names with underscores
+pub fn file_rename(file_name: String) -> String {
+    let mut new_file_name: String = String::new();
 
-    return json_object.to_string();
+    for character in file_name.chars() {
+        if INVALID_CHARS.contains(character) {
+            // println!("invalid character {}", &character);
+            new_file_name.push('_');
+        } else {
+            new_file_name.push(character);
+        }
+    }
+
+    return new_file_name;
 }
 
+#[cfg(test)]
+mod test {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn test_classify_invalid_empty() {
+        assert!(matches!(
+            BlueprintType::classify(
+                &json!({})
+            ),
+            BlueprintType::Invalid
+        ));
+    }
+
+    #[test]
+    fn test_classify_invalid_nonsense() {
+        assert!(matches!(
+            BlueprintType::classify(
+                &json!({
+                    "blueprints": {
+                        "asd": "xyz"
+                    }
+                })
+            ),
+            BlueprintType::Invalid
+        ));
+    }
+
+    #[test]
+    fn test_classify_valid_bp() {
+        assert!(matches!(
+            BlueprintType::classify(
+                &json!({
+                    "blueprint": {
+                        "item": "asd",
+                        "label": "blueprint_thang",
+                        "version": 1234567890
+                    }
+                })
+            ),
+            BlueprintType::Blueprint(_)
+        ));
+    }
+    #[test]
+    fn test_classify_valid_book() {
+        assert!(matches!(
+            BlueprintType::classify(
+                &json!({
+                    "blueprint_book": {
+                        "item": "asd",
+                        "label": "blueprint_thang",
+                        "active_index": 0,
+                        "version": 1234567890
+                    }
+                })
+            ),
+            BlueprintType::Book(_)
+        ));
+    }
+}

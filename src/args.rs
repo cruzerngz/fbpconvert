@@ -24,7 +24,7 @@ pub enum SubCommands {
         #[clap(value_parser)]
         infile: Option<String>,
 
-        /// Destination directory (optional), for blueprint books/single blueprints
+        /// Destination directory (optional)
         #[clap(short, long)]
         destination: Option<String>
     },
@@ -32,16 +32,16 @@ pub enum SubCommands {
     /// Export a single file or JSON tree as a blueprint string
     #[clap(arg_required_else_help = true)]
     Export {
-        /// Source directory or JSON file
+        /// Source directory or single JSON file
         #[clap(value_parser)]
         source: Option<String>,
 
-        /// Infile, for single blueprints
+        /// Outfile name (optional)
         #[clap(short, long)]
-        infile: Option<String>,
+        outfile: Option<String>,
 
-        /// Outfile containing blueprint string
+        /// Destination directory (optional)
         #[clap(short, long)]
-        outfile: Option<String>
+        destination: Option<String>
     }
 }
