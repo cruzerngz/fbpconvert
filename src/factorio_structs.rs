@@ -11,6 +11,8 @@ pub mod fragments {
     /// Blueprint parameters except arrays
     #[derive(Serialize, Deserialize, Debug)]
     pub struct BlueprintFragment {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub description: Option<String>,
         pub item: Option<String>,
         pub label: String,
         pub label_color: Option<Color>,
@@ -20,6 +22,8 @@ pub mod fragments {
     /// Blueprint book
     #[derive(Serialize, Deserialize, Debug)]
     pub struct BookFragment {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub description: Option<String>,
         pub item: Option<String>,
         pub label: String,
         pub label_color: Option<Color>,
@@ -69,6 +73,8 @@ pub mod exportable {
 /// Blueprint book with additional parameter containing the order of it's child blueprints
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Book { // used internally
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
     pub item: Option<String>,
     pub label: String,
     pub label_color: Option<Color>,
@@ -89,6 +95,8 @@ pub struct Book { // used internally
 #[derive(Serialize, Deserialize, Debug)]
 pub struct BookDotFile { //used internally
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub item: Option<String>,
     pub label: String,
 
@@ -108,6 +116,8 @@ pub struct BookDotFile { //used internally
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Blueprint { //used internally
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub item: Option<String>,
     pub label: String,
