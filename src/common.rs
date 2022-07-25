@@ -45,8 +45,19 @@ impl BlueprintType {
     /// Determines the blueprint type, returning an enum with the enclosing blueprint's name
     pub fn classify(given_bp: &Value) -> BlueprintType {
 
-        let unknown_bp_type:factorio_structs::UnknownBlueprintType = serde_json::from_value(given_bp.clone())
-            .expect("failed to serialize unknown blueprint type");
+        // let unknown_bp_type:factorio_structs::UnknownBlueprintType = serde_json::from_value(given_bp.clone())
+        //     .expect("failed to serialize unknown blueprint type");
+
+        let unknown_bp_type: factorio_structs::UnknownBlueprintType;
+        match serde_json::from_value(given_bp.clone()) {
+            Ok(_val) => {
+                unknown_bp_type = _val;
+            },
+            Err(e) => {
+                println!("Error: {}", e);
+                return BlueprintType::Invalid
+            },
+        }
 
         match unknown_bp_type.blueprint_book {
             Some(bp_book) => {

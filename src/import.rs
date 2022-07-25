@@ -5,7 +5,8 @@ use std::process::exit;
 use std::fs::File;
 
 use crate::{common, factorio_structs};
-use crate::common::{BlueprintType, PathType};
+use factorio_structs::importable;
+use crate::common::BlueprintType;
 use crate::progress::{self, ProgressType};
 
 pub struct Worker {
@@ -18,10 +19,15 @@ impl Worker {
 
     /// Main calling method for struct
     pub fn exec(&self) {
+
+        // create new progress tracker instance
+        let mut progress_tracker = progress::Tracker::new(progress::CommandType::Import);
+
         // make the destination dir (if it doesnt exist)
         match fs::create_dir_all(&self.dest) {
             Err(_) => {
                 println!("Error creating deestination directory!");
+                progress_tracker.complete();
                 exit(1);
             },
             Ok(_) => ()
@@ -36,12 +42,10 @@ impl Worker {
             },
             Err(e) => {
                 println!("{}", e);
+                progress_tracker.complete();
                 exit(1);
             }
         }
-
-        // create new progress tracker instance
-        let mut progress_tracker = progress::Tracker::new(progress::CommandType::Import);
 
         // convert the string to a json value
         let blueprint_obj: serde_json::Value;
@@ -62,6 +66,7 @@ impl Worker {
         match BlueprintType::classify(&blueprint_obj) {
             BlueprintType::Invalid => {
                 println!("Invalid blueprint!");
+                progress_tracker.complete();
                 exit(1);
             }
             BlueprintType::Blueprint(_bp_name) => {
@@ -96,7 +101,7 @@ impl Worker {
             .to_string();
 
         // remove "index" key from the blueprint object
-        let mut blueprint_compliant: factorio_structs::BlueprintHead;
+        let mut blueprint_compliant: importable::BlueprintHead;
         match serde_json::from_value(blueprint.to_owned()) {
             Ok(result) => blueprint_compliant = result,
             Err(_) => return Err("Error deserializing to compliant blueprint".to_string())
@@ -146,7 +151,7 @@ impl Worker {
     ) -> Result<(), String> {
 
         // local_book_copy contains dotfile information
-        let mut book_dot_file: factorio_structs::BookHead;
+        let mut book_dot_file: importable::BookHead;
         match serde_json::from_value(bp_book.clone()) {
             Ok(_val) => {
                 book_dot_file = _val

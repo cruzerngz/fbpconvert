@@ -4,7 +4,7 @@ use std::process::exit;
 
 use serde_json::Value;
 
-use crate::factorio_structs;
+use crate::factorio_structs::exportable;
 use crate::common;
 use crate::progress::{self, ProgressType};
 
@@ -152,7 +152,7 @@ impl Worker {
             Err(_) => return Err("failed to read file".to_string())
         }
 
-        let mut book_object: factorio_structs::BookDotFileHead;
+        let mut book_object: exportable::BookDotFileHead;
 
         match serde_json::from_str(dot_file_contents.as_ref()) {
             Ok(_book) => book_object = _book,

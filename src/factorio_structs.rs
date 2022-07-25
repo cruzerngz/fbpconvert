@@ -33,6 +33,23 @@ pub mod fragments {
 pub mod importable {
     use super::*;
 
+    /// Head of the blueprint book
+    #[derive(Serialize, Deserialize, Debug)]
+    pub struct BookHead { //used in import
+        pub blueprint_book: Book,
+
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub index: Option<u16>
+    }
+
+    /// Head of blueprint, to factorio spec
+    #[derive(Serialize, Deserialize, Debug)]
+    pub struct BlueprintHead { // used in import
+        pub blueprint: Blueprint,
+
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub index: Option<u16>
+    }
 }
 
 /// Structs that are valid for use in export only.
@@ -40,31 +57,18 @@ pub mod importable {
 pub mod exportable {
     use super::*;
 
-}
+    #[derive(Serialize, Deserialize, Debug)]
+    pub struct BookDotFileHead { //used in export
+        pub blueprint_book: BookDotFile,
 
-/// Head of the blueprint book
-#[derive(Serialize, Deserialize, Debug)]
-pub struct BookHead {
-    pub blueprint_book: Book
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct BookDotFileHead {
-    pub blueprint_book: BookDotFile
-}
-
-/// Head of blueprint, to factorio spec
-#[derive(Serialize, Deserialize, Debug)]
-pub struct BlueprintHead {
-    pub blueprint: Blueprint,
-
-    #[serde(skip_serializing)]
-    pub index: u16
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub index: Option<u16>
+    }
 }
 
 /// Blueprint book with additional parameter containing the order of it's child blueprints
 #[derive(Serialize, Deserialize, Debug)]
-pub struct Book {
+pub struct Book { // used internally
     pub item: Option<String>,
     pub label: String,
     pub label_color: Option<Color>,
@@ -83,7 +87,7 @@ pub struct Book {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct BookDotFile {
+pub struct BookDotFile { //used internally
     #[serde(skip_serializing_if = "Option::is_none")]
     pub item: Option<String>,
     pub label: String,
@@ -103,7 +107,7 @@ pub struct BookDotFile {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct Blueprint {
+pub struct Blueprint { //used internally
     #[serde(skip_serializing_if = "Option::is_none")]
     pub item: Option<String>,
     pub label: String,
@@ -126,7 +130,7 @@ pub struct Blueprint {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct Color {
+pub struct Color { //used internally
     pub r: f32,
     pub g: f32,
     pub b: f32,
@@ -134,10 +138,13 @@ pub struct Color {
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct UnknownBlueprintType {
+pub struct UnknownBlueprintType { //used in common
     #[serde(skip_serializing_if = "Option::is_none")]
     pub blueprint_book: Option<fragments::BookFragment>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub blueprint: Option<fragments::BlueprintFragment>
+    pub blueprint: Option<fragments::BlueprintFragment>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub index: Option<u16>
 }
