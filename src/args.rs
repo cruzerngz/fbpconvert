@@ -24,7 +24,7 @@ pub enum SubCommands {
         #[clap(value_parser)]
         infile: Option<String>,
 
-        /// Destination directory (optional), for blueprint books/single blueprints
+        /// Destination directory (optional)
         #[clap(short, long)]
         destination: Option<String>
     },
@@ -36,8 +36,12 @@ pub enum SubCommands {
         #[clap(value_parser)]
         source: Option<String>,
 
-        /// Outfile (optional), containing blueprint string
+        /// Outfile name (optional)
         #[clap(short, long)]
-        outfile: Option<String>
+        outfile: Option<String>,
+
+        /// Destination directory (optional)
+        #[clap(short, long)]
+        destination: Option<String>
     }
 }

@@ -14,16 +14,16 @@ const PREFIX_OUT: &str = "fbpconvert-bp_";
 pub struct Worker {
     pub source: String,
     pub out_file: Option<String>,
-    // pub source_path: Option<PathBuf>
+    pub dest: Option<String>
 }
 
 impl Worker {
 
     /// Main calling method for struct
     pub fn exec(&self) {
-        let source_path = PathBuf::from(&self.source);
-
         let mut progress_tracker = progress::Tracker::new(progress::CommandType::Export);
+
+        let source_path = PathBuf::from(&self.source);
         let mut read_json_value =  serde_json::json!({});
 
         match source_path.extension() {
@@ -276,38 +276,39 @@ impl Worker {
 
     }
 
-    /// Takes the blueprint and writes it to a destination
+    /// Takes the blueprint and writes it to a destination.
     /// Returns an error message if it occurs
     pub fn write_blueprint_to_file(
         &self,
         blueprint_json: &Value,
     ) -> Result<(),String> {
 
-        let mut destination: String;
-        match &self.out_file {
-            Some(dest) => destination = dest.to_owned(),
-            None => {
-                match common::BlueprintType::classify(&blueprint_json) {
-                    common::BlueprintType::Invalid => {
-                        return Err("failed to determine blueprint type".to_string())
-                    },
-                    common::BlueprintType::Blueprint(name) => {
-                        destination = name;
-                    },
-                    common::BlueprintType::Book(name) => {
-                        destination = name;
-                    }
-                }
-                destination = format!("{}{}",PREFIX_OUT, destination);
-            }
+        let mut write_dest: PathBuf = PathBuf::new();
+        if let Some(_dir) = &self.dest {
+            write_dest.push(_dir);
         }
-
-        // println!("dest: {}", destination);
+        if let Some(_file) = &self.out_file {
+            write_dest.push(_file);
+        } else {
+            let file_name: String;
+            match common::BlueprintType::classify(&blueprint_json) {
+                common::BlueprintType::Invalid => {
+                    return Err("failed to determine blueprint type".to_string())
+                },
+                common::BlueprintType::Blueprint(name) => {
+                    file_name = name;
+                },
+                common::BlueprintType::Book(name) => {
+                    file_name = name;
+                }
+            }
+            write_dest.push(format!("{}{}",PREFIX_OUT, file_name));
+        }
 
         match serde_json::to_string(blueprint_json) {
             Ok(blueprint_string) => {
                 let blueprint_string_deflated = common::factorio_deflate(blueprint_string.as_ref());
-                match fs::write(destination, blueprint_string_deflated.as_bytes()) {
+                match fs::write(write_dest, blueprint_string_deflated.as_bytes()) {
                     Ok(_) => {return Ok(())},
                     Err(_) => {
                         return Err("file write error".to_string());

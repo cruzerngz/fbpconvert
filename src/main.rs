@@ -45,12 +45,14 @@ fn main() {
 
         SubCommands::Export {
             source,
-            outfile
+            outfile,
+            destination
         } => {
 
             let export_args = export::Worker {
                 source: source.clone().unwrap(),
-                out_file: outfile.clone()
+                out_file: outfile.clone(),
+                dest: destination.clone()
             };
 
             export_args.exec();

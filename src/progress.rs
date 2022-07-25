@@ -22,10 +22,10 @@ pub enum ProgressType {
     Blueprint(String)
 }
 
-/// Possible errors that can be encountered
-pub enum ErrorType {
+// /// Possible errors that can be encountered
+// pub enum ErrorType {
 
-}
+// }
 
 /// Progress tracker for data display.
 pub struct Tracker {
