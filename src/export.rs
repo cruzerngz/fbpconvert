@@ -122,9 +122,13 @@ impl Worker {
                 match serde_json::to_string(&read_json_value) {
                     Ok(blueprint_string) => {
                         let blueprint_string_deflated = common::factorio_deflate(blueprint_string.as_ref());
-                        match clipboard.set_contents(blueprint_string_deflated.to_owned()) {
+                        match clipboard.set_contents(blueprint_string_deflated.clone()) {
                             Ok(_) => {
-                                // println!("{}", blueprint_string_deflated);
+                                // for some reason there needs to be a small pause here
+                                // if not the clipboard contents are not copied over
+                                std::thread::sleep(std::time::Duration::from_millis(100));
+                                // progress::Tracker::pause(
+                                //     format!("Blueprint copied into clipboard. Paste the string before exiting."))
                             },
                             Err(_) => progress_tracker
                             .error_additional("failed to copy blueprint string to clipboard".to_string())
