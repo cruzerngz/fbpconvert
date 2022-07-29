@@ -8,6 +8,7 @@ use crate::{common, factorio_structs};
 use factorio_structs::importable;
 use crate::common::BlueprintType;
 use crate::progress::{self, ProgressType};
+use crate::args;
 
 pub struct Worker {
     pub in_file: String,
@@ -16,6 +17,32 @@ pub struct Worker {
 }
 
 impl Worker {
+
+    pub fn from(import_type: &args::ImportSubCommands) -> Worker {
+        match import_type {
+            args::ImportSubCommands::File(_file) => {
+                Worker{
+                    in_file: _file.infile.clone().unwrap(),
+                    dest: _file.destination.clone().unwrap_or(".".to_string()),
+                    dest_path: None,
+                }
+            },
+            args::ImportSubCommands::Link(_link) => {
+                Worker {
+                    in_file: todo!(),
+                    dest: todo!(),
+                    dest_path: todo!(),
+                }
+            },
+            args::ImportSubCommands::Clipboard(_str) => {
+                Worker{
+                    in_file: todo!(),
+                    dest: todo!(),
+                    dest_path: todo!(),
+                }
+            },
+        }
+    }
 
     /// Main calling method for struct
     pub fn exec(&self) {

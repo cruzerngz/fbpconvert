@@ -7,6 +7,7 @@ use serde_json::Value;
 use crate::factorio_structs::exportable;
 use crate::common;
 use crate::progress::{self, ProgressType};
+use crate::args;
 
 /// Prefix for exported blueprints
 const PREFIX_OUT: &str = "fbpconvert-bp_";
@@ -18,6 +19,14 @@ pub struct Worker {
 }
 
 impl Worker {
+
+    pub fn from(export_file: &args::ExportFile) -> Worker{
+        Worker{
+            source: export_file.source.clone().unwrap(),
+            out_file: export_file.outfile.clone(),
+            dest: export_file.destination.clone(),
+        }
+    }
 
     /// Main calling method for struct
     pub fn exec(&self) {
