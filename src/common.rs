@@ -1,18 +1,8 @@
-use std::path::Path;
-
 use serde_json::Value;
 
 use crate::factorio_structs;
 
 pub const INVALID_CHARS: &str = r#" /\<>:"|?*"#;
-
-/// Various types of paths the program may encounter
-#[derive(Debug)]
-pub enum PathType {
-    Invalid,
-    File(String),
-    Dir(String)
-}
 
 /// For categorising the type of blueprint in JSON value
 #[derive(Debug)]
@@ -22,31 +12,9 @@ pub enum BlueprintType {
     Blueprint(String)
 }
 
-impl PathType {
-    /// Determines the path type, returning an enum
-    pub fn classify(given_path: &str) -> PathType {
-        if !Path::new(given_path).exists() {
-            return PathType::Invalid;
-        } else {
-            if Path::new(given_path).is_file() {
-                return PathType::File(given_path.to_string());
-            }
-            else if Path::new(given_path).is_dir() {
-                return PathType::Dir(given_path.to_string());
-            }
-            else {
-                return PathType::Invalid;
-            }
-        }
-    }
-}
-
 impl BlueprintType {
     /// Determines the blueprint type, returning an enum with the enclosing blueprint's name
     pub fn classify(given_bp: &Value) -> BlueprintType {
-
-        // let unknown_bp_type:factorio_structs::UnknownBlueprintType = serde_json::from_value(given_bp.clone())
-        //     .expect("failed to serialize unknown blueprint type");
 
         let unknown_bp_type: factorio_structs::UnknownBlueprintType;
         match serde_json::from_value(given_bp.clone()) {

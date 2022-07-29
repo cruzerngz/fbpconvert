@@ -26,10 +26,11 @@ pub enum MainSubCommands {
 
     /// Export a single file or JSON tree as a blueprint string
     #[clap(arg_required_else_help = true)]
-    Export(ExportFile)
+    #[clap(subcommand)]
+    Export(ExportSubCommands)
 }
 
-#[derive(Parser, Debug)]
+#[derive(Parser, Debug, Clone)]
 pub enum ImportSubCommands {
     /// Import blueprint strings as a file
     #[clap(arg_required_else_help = true)]
@@ -40,15 +41,25 @@ pub enum ImportSubCommands {
     Link(ImportLink),
 
     /// Import blueprint strings from the clipboard
+    Clipboard(ImportClipboard) // no arg required
+}
+
+#[derive(Parser, Debug, Clone)]
+pub enum ExportSubCommands {
+    /// Export blueprint strings to file
     #[clap(arg_required_else_help = true)]
-    Clipboard(ImportClipboard)
+    File(ExportFile),
+
+    /// Export blueprint strings to the clipboard
+    #[clap(arg_required_else_help = true)]
+    Clipboard(ExportClipboard)
 }
 
 /// Contains CLI flags/arguments for various commands/subcommands
 pub mod commands {
     use super::*;
 
-    #[derive(Parser, Debug)]
+    #[derive(Parser, Debug, Clone)]
     pub struct ImportFile {
         /// Infile containing blueprint string
         #[clap(value_parser)]
@@ -59,7 +70,7 @@ pub mod commands {
         pub destination: Option<String>
     }
 
-    #[derive(Parser, Debug)]
+    #[derive(Parser, Debug, Clone)]
     pub struct ImportLink {
         /// URL to blueprint
         #[clap(value_parser)]
@@ -71,18 +82,14 @@ pub mod commands {
     }
 
     /// Import string directly (not sure if the terminal can handle this)
-    #[derive(Parser, Debug)]
+    #[derive(Parser, Debug, Clone)]
     pub struct ImportClipboard {
-        /// Full blueprint string
-        #[clap(value_parser)]
-        pub blueprint_string: Option<String>,
-
         /// Destination directory (optional)
         #[clap(short, long)]
         pub destination: Option<String>
     }
 
-    #[derive(Parser, Debug)]
+    #[derive(Parser, Debug, Clone)]
     pub struct ExportFile {
         /// Source directory or single JSON file
         #[clap(value_parser)]
@@ -95,5 +102,12 @@ pub mod commands {
         /// Destination directory (optional)
         #[clap(short, long)]
         pub destination: Option<String>
+    }
+
+    #[derive(Parser, Debug, Clone)]
+    pub struct ExportClipboard {
+        /// Source directory or single JSON file
+        #[clap(value_parser)]
+        pub source: Option<String>,
     }
 }

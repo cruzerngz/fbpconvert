@@ -3,6 +3,7 @@ use std::fs;
 use std::process::exit;
 
 use serde_json::Value;
+use copypasta::{self, ClipboardContext, ClipboardProvider};
 
 use crate::factorio_structs::exportable;
 use crate::common;
@@ -13,6 +14,7 @@ use crate::args;
 const PREFIX_OUT: &str = "fbpconvert-bp_";
 
 pub struct Worker {
+    pub export_type: args::ExportSubCommands,
     pub source: String,
     pub out_file: Option<String>,
     pub dest: Option<String>
@@ -20,11 +22,29 @@ pub struct Worker {
 
 impl Worker {
 
-    pub fn from(export_file: &args::ExportFile) -> Worker{
+    pub fn from(export_file: &args::ExportSubCommands) -> Worker{
+        let source: String;
+        let out_file: Option<String>;
+        let dest: Option<String>;
+
+        match &export_file {
+            args::ExportSubCommands::File(_file) => {
+                source = _file.source.clone().unwrap();
+                out_file = _file.outfile.clone();
+                dest = _file.destination.clone();
+            },
+            args::ExportSubCommands::Clipboard(_copy) => {
+                source = _copy.source.clone().unwrap();
+                out_file = None;
+                dest = None;
+            },
+        }
+
         Worker{
-            source: export_file.source.clone().unwrap(),
-            out_file: export_file.outfile.clone(),
-            dest: export_file.destination.clone(),
+            export_type: export_file.clone(),
+            source,
+            out_file,
+            dest
         }
     }
 
@@ -87,12 +107,34 @@ impl Worker {
         }
         // println!("final constructed: {:?}", &read_json_value);
 
-        match self.write_blueprint_to_file(&read_json_value) {
-            Ok(()) => (),
-            Err(err_msg) => {
-                progress_tracker.error_additional(err_msg);
-            }
+        match &self.export_type {
+            args::ExportSubCommands::File(_) => {
+                match self.write_blueprint_to_file(&read_json_value) {
+                    Ok(()) => (),
+                    Err(err_msg) => {
+                        progress_tracker.error_additional(err_msg);
+                    }
+                }
+            },
+
+            args::ExportSubCommands::Clipboard(_) => {
+                let mut clipboard = ClipboardContext::new().unwrap();
+                match serde_json::to_string(&read_json_value) {
+                    Ok(blueprint_string) => {
+                        let blueprint_string_deflated = common::factorio_deflate(blueprint_string.as_ref());
+                        match clipboard.set_contents(blueprint_string_deflated.to_owned()) {
+                            Ok(_) => {
+                                // println!("{}", blueprint_string_deflated);
+                            },
+                            Err(_) => progress_tracker
+                            .error_additional("failed to copy blueprint string to clipboard".to_string())
+                        }
+                    },
+                    Err(_) => progress_tracker.error_additional("serde_json serialize error".to_string())
+                }
+            },
         }
+
         progress_tracker.complete();
     }
 

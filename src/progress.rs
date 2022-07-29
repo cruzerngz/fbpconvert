@@ -1,6 +1,6 @@
 //! This module handles writing progress to stdout
 
-use std::{io::Write};
+use std::io::Write;
 
 use crossterm::{
     terminal,
@@ -21,11 +21,6 @@ pub enum ProgressType {
     Book(String),
     Blueprint(String)
 }
-
-// /// Possible errors that can be encountered
-// pub enum ErrorType {
-
-// }
 
 /// Progress tracker for data display.
 pub struct Tracker {
