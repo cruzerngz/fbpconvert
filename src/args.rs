@@ -32,7 +32,7 @@ pub enum MainSubCommands {
 
 #[derive(Parser, Debug, Clone)]
 pub enum ImportSubCommands {
-    /// Import blueprint strings as a file
+    /// Import blueprint strings from a file
     #[clap(arg_required_else_help = true)]
     File(ImportFile),
 
@@ -46,7 +46,7 @@ pub enum ImportSubCommands {
 
 #[derive(Parser, Debug, Clone)]
 pub enum ExportSubCommands {
-    /// Export blueprint strings to file
+    /// Export blueprint strings to a file
     #[clap(arg_required_else_help = true)]
     File(ExportFile),
 
@@ -81,7 +81,7 @@ pub mod commands {
         pub destination: Option<String>
     }
 
-    /// Import string directly (not sure if the terminal can handle this)
+    /// Import string directly
     #[derive(Parser, Debug, Clone)]
     pub struct ImportClipboard {
         /// Destination directory (optional)

@@ -59,7 +59,11 @@ impl Worker {
             args::ImportSubCommands::File(_file) => {
                 match fs::read_to_string(&_file.infile.clone().unwrap()) {
                     Ok(_str) => blueprint_string = _str,
-                    Err(_) => todo!(),
+                    Err(_) => {
+                        progress_tracker.error_additional("file not found".to_string());
+                        progress_tracker.complete();
+                        exit(1);
+                    },
                 }
             },
             args::ImportSubCommands::Link(_link) => {

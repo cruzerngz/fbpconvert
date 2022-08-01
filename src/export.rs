@@ -167,8 +167,9 @@ impl Worker {
                                 .to_str()
                                 .unwrap()
                                 .to_string()),
-                            Some(err_msg)
-                        )
+                            Some(err_msg));
+                        progress_tracker.complete();
+                        exit(1);
                     }
                 }
             }
@@ -273,7 +274,7 @@ impl Worker {
         let dot_file_contents: String;
         match fs::read_to_string(&dot_file_path) {
             Ok(_file) => dot_file_contents = _file,
-            Err(_) => return Err("failed to read file".to_string())
+            Err(_) => return Err("failed to read dotfile".to_string())
         }
 
         let mut book_object: exportable::BookDotFileRecursive;
