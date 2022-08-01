@@ -5,7 +5,7 @@ use std::process::exit;
 use serde_json::Value;
 use copypasta::{self, ClipboardContext, ClipboardProvider};
 
-use crate::factorio_structs::exportable;
+use crate::factorio_structs::{exportable, self};
 use crate::common;
 use crate::progress::{self, ProgressType};
 use crate::args;
@@ -60,15 +60,45 @@ impl Worker {
                 if ext.eq_ignore_ascii_case("json") {
                     match Worker::read_blueprint(&source_path) {
                         Ok(json_object) => {
-                            read_json_value = json_object;
-                            progress_tracker.ok(
-                                ProgressType::Blueprint(
-                                    source_path
+
+                            // remove unnecessary "index" key-val at head of bp
+                            let strip_index = |json_object: Value| -> Result<Value, String> {
+                                let mut bp: factorio_structs::exportable::Blueprint;
+                                match serde_json::from_value(json_object) {
+                                    Ok(_val) => {
+                                        bp = _val;
+                                        bp.index = None;
+                                        match serde_json::to_value(bp) {
+                                            Ok(_val) => Ok(_val),
+                                            Err(_) => Err("unable to convert from Value".to_string()),
+                                        }
+                                    },
+                                    Err(_) => Err("unable to convert to Value".to_string()),
+                                }
+                            };
+
+                            match strip_index(json_object) {
+                                Ok(_val) => {
+                                    read_json_value = _val;
+                                    progress_tracker.ok(
+                                        ProgressType::Blueprint(
+                                            source_path
+                                                .to_str()
+                                                .unwrap()
+                                                .to_string()
+                                        )
+                                    )
+                                },
+                                Err(err_msg) => {progress_tracker.error(
+                                    ProgressType::Blueprint(source_path
                                         .to_str()
                                         .unwrap()
-                                        .to_string()
-                                )
-                            )
+                                        .to_string()),
+                                    Some(err_msg));
+                                    progress_tracker.complete();
+                                    exit(1);
+                                }
+                            }
                         },
                         Err(err_msg) => {
                             progress_tracker.error(
@@ -91,7 +121,45 @@ impl Worker {
             None => { // read blueprint book (recursive)
                 match Worker::read_book_recursive(&mut progress_tracker, &source_path) {
                     Ok(json_object) => {
-                        read_json_value = json_object;
+
+                        // remove unnecessary "index" key-val at head of bp
+                        let strip_index = |json_object: Value| -> Result<Value, String> {
+                            let mut bp: factorio_structs::exportable::BookDotFileRecursive;
+                            match serde_json::from_value(json_object) {
+                                Ok(_val) => {
+                                    bp = _val;
+                                    bp.index = None;
+                                    match serde_json::to_value(bp) {
+                                        Ok(_val) => Ok(_val),
+                                        Err(_) => Err("unable to convert from Value".to_string()),
+                                    }
+                                },
+                                Err(_) => Err("unable to convert to Value".to_string()),
+                            }
+                        };
+
+                        match strip_index(json_object) {
+                            Ok(_val) => {
+                                read_json_value = _val;
+                                progress_tracker.ok(
+                                    ProgressType::Blueprint(
+                                        source_path
+                                            .to_str()
+                                            .unwrap()
+                                            .to_string()
+                                    )
+                                )
+                            },
+                            Err(err_msg) => {progress_tracker.error(
+                                ProgressType::Blueprint(source_path
+                                    .to_str()
+                                    .unwrap()
+                                    .to_string()),
+                                Some(err_msg));
+                                progress_tracker.complete();
+                                exit(1);
+                            }
+                        }
                     },
                     Err(err_msg) => {
                         progress_tracker.error(
@@ -106,6 +174,7 @@ impl Worker {
             }
         }
         // println!("final constructed: {:?}", &read_json_value);
+
 
         match &self.export_type {
             args::ExportSubCommands::File(_) => {
@@ -207,7 +276,7 @@ impl Worker {
             Err(_) => return Err("failed to read file".to_string())
         }
 
-        let mut book_object: exportable::BookDotFileHead;
+        let mut book_object: exportable::BookDotFileRecursive;
 
         match serde_json::from_str(dot_file_contents.as_ref()) {
             Ok(_book) => book_object = _book,

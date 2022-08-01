@@ -66,9 +66,10 @@ pub mod importable {
 /// Exporting is converting a directory or a JSON file to a blueprint string.
 pub mod exportable {
     use super::*;
+    pub use importable::BlueprintHead as Blueprint;
 
     #[derive(Serialize, Deserialize, Debug)]
-    pub struct BookDotFileHead { //used in export
+    pub struct BookDotFileRecursive { //used in export
         pub blueprint_book: BookDotFile,
 
         #[serde(skip_serializing_if = "Option::is_none")]
