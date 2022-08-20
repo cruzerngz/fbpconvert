@@ -1,10 +1,11 @@
 use std::fs;
-use std::io::Write;
+use std::io::{Write, Read};
 use std::path::PathBuf;
 use std::process::exit;
 use std::fs::File;
 
 use copypasta::{self, ClipboardContext, ClipboardProvider};
+// use reqwest::blocking::Response;
 
 use crate::{common, factorio_structs};
 use factorio_structs::importable;
@@ -26,9 +27,9 @@ impl Worker {
                 args::ImportSubCommands::File(_file) => {
                     _file.destination.clone().unwrap_or(".".to_string())
                 },
-                args::ImportSubCommands::Link(_link) => {
-                    _link.destination.clone().unwrap_or(".".to_string())
-                },
+                // args::ImportSubCommands::Link(_link) => {
+                //     _link.destination.clone().unwrap_or(".".to_string())
+                // },
                 args::ImportSubCommands::Clipboard(_copy) => {
                     _copy.destination.clone().unwrap_or(".".to_string())
                 }
@@ -52,7 +53,7 @@ impl Worker {
             Ok(_) => ()
         }
 
-        let blueprint_string: String;
+        let mut blueprint_string = String::new();
         let blueprint_inflated:String;
 
         match &self.import_type {
@@ -66,11 +67,43 @@ impl Worker {
                     },
                 }
             },
-            args::ImportSubCommands::Link(_link) => {
-                println!("Import link command not impl'd yet!");
-                progress_tracker.complete();
-                exit(1);
-            },
+            // args::ImportSubCommands::Link(_link) => {
+            //     let mut resp: Response;
+            //     match &_link.link {
+            //         Some(_link) => {
+            //             match reqwest::blocking::get(_link) {
+            //                 Ok(_resp) => {
+            //                     resp = _resp;
+            //                 },
+            //                 Err(_) => {
+            //                     progress_tracker.error_additional("invalid link".to_string());
+            //                     progress_tracker.complete();
+            //                     exit(1);
+            //                 },
+            //             }
+            //         },
+            //         None => {
+            //             progress_tracker.error_additional("no link given".to_string());
+            //             progress_tracker.complete();
+            //             exit(1);
+            //         },
+            //     }
+
+            //     match resp.read_to_string(&mut blueprint_string) {
+            //         Ok(_size) => {
+            //             progress_tracker.msg_temp(format!("{} bytes downloaded", _size))
+            //         },
+            //         Err(_) => {
+            //             progress_tracker.error_additional("unable to read to string".to_string());
+            //             progress_tracker.complete();
+            //             exit(1);
+            //         },
+            //     }
+
+            //     // println!("Import link command not impl'd yet!");
+            //     // progress_tracker.complete();
+            //     // exit(1);
+            // },
             args::ImportSubCommands::Clipboard(_copy) => {
                 let mut clipboard = ClipboardContext::new().unwrap();
                 match clipboard.get_contents() {

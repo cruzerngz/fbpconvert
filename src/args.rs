@@ -36,9 +36,9 @@ pub enum ImportSubCommands {
     #[clap(arg_required_else_help = true)]
     File(ImportFile),
 
-    /// Import blueprint strings from a link
-    #[clap(arg_required_else_help = true)]
-    Link(ImportLink),
+    // /// Import blueprint strings from a link
+    // #[clap(arg_required_else_help = true)]
+    // Link(ImportLink),
 
     /// Import blueprint strings from the clipboard
     Clipboard(ImportClipboard) // no arg required
