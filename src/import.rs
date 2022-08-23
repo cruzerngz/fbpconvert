@@ -53,7 +53,7 @@ impl Worker {
             Ok(_) => ()
         }
 
-        let mut blueprint_string = String::new();
+        let blueprint_string: String;
         let blueprint_inflated:String;
 
         match &self.import_type {

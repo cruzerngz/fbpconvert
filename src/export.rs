@@ -112,7 +112,7 @@ impl Worker {
                         }
                     }
                 } else {
-                    progress_tracker.error_additional("file given is not JSON!".to_string());
+                    progress_tracker.error_additional(format!("Invalid file extension: {:?}", ext));
                     progress_tracker.complete();
                     exit(1);
                 }
