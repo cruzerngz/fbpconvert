@@ -175,7 +175,7 @@ impl Worker {
             }
         }
         // println!("final constructed: {:?}", &read_json_value);
-
+        progress_tracker.msg_temp("exporting blueprint...".to_string());
 
         match &self.export_type {
             args::ExportSubCommands::File(_) => {
