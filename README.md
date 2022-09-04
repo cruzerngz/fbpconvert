@@ -43,7 +43,7 @@ cd <path_to_git_repo>
 cargo b --release
 ```
 
-Alternatively, download a release instead (when it's published)
+Alternatively, download a release instead
 
 ---
 
@@ -53,9 +53,14 @@ Run `fbpconvert help` for more information
 
 ### Importing a blueprint string from factorio
 
-`fbpconvert import <blueprint_string_file> -d <destination directory>`
+`fbpconvert import clipboard` : import directly from your clipboard
+
+`fbpconvert import file` : import blueprint string from a file
 
 ### Exporting a JSON tree to a blueprint string
-Work in progress
+
+`fbpconvert export clipboard` : export a blueprint file/directory to the clipboard
+
+`fbpconvert export file` : export a blueprint string to a file
 
 ---
