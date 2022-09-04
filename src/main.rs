@@ -4,60 +4,64 @@ mod export;
 mod common;
 mod factorio_structs;
 mod progress;
-
-use std::process::exit;
+// mod test_constants;
 
 use args::*;
 use clap::Parser;
 
 
 fn main() {
-    let main_args = CliArgs::parse();
+    let main_args = MainCliArgs::parse();
 
     match &main_args.command {
-        SubCommands::Import {
-            infile,
-            destination,
-        } => {
-            match infile {
-                Some(file_path) => {
-                    match common::PathType::classify(&file_path.as_str()) {
-                        common::PathType::Invalid => {
-                            println!("File '{}' not found!", file_path);
-                            exit(1);
-                        },
-                        _ => ()
-                    }
-                },
-                None => {
-                    println!("No file specified!");
-                    exit(1)
-                }
-            }
-
-            let import_args = import::Worker {
-                in_file: infile.clone().unwrap(),
-                dest: destination.clone().unwrap_or(".".to_string()),
-                dest_path: None
-            };
-            import_args.exec();
+        MainSubCommands::Import(_cmd_type) => {
+            let import_worker = import::Worker::from(_cmd_type);
+            import_worker.exec();
         },
 
-        SubCommands::Export {
-            source,
-            outfile,
-            destination
-        } => {
-
-            let export_args = export::Worker {
-                source: source.clone().unwrap(),
-                out_file: outfile.clone(),
-                dest: destination.clone()
-            };
-
-            export_args.exec();
+        MainSubCommands::Export(_cmd_type) => {
+            let export_worker = export::Worker::from(_cmd_type);
+            export_worker.exec();
         }
 
     }
+}
 
+#[cfg(notset)]
+mod test {
+    use super::*;
+    use serde_json::{Value, json};
+
+    use test_constants::constants::FACTORIO_BP_STRING as SAMPLE_BP;
+
+    #[test]
+    fn test_equal_values() {
+        let reference = json!({
+            "a": 1,
+            "b": 2
+        });
+
+        let comp = json!({
+            "b": 2,
+            "a": 1
+        });
+
+        assert_eq!(reference, comp);
+    }
+
+    fn test_import_export_loop() {
+        let reference_string: String;
+        match common::factorio_inflate(SAMPLE_BP) {
+            Ok(_val) => {
+                reference_string = _val
+            },
+            Err(e) => {
+                panic!("{}", e);
+            },
+        }
+
+        let reference_val: Value;
+
+
+    }
 }

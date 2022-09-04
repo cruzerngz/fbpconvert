@@ -1,21 +1,41 @@
 use std::fs;
-use std::io::Write;
+use std::io::{Write, Read};
 use std::path::PathBuf;
 use std::process::exit;
 use std::fs::File;
+
+use copypasta::{self, ClipboardContext, ClipboardProvider};
+// use reqwest::blocking::Response;
 
 use crate::{common, factorio_structs};
 use factorio_structs::importable;
 use crate::common::BlueprintType;
 use crate::progress::{self, ProgressType};
+use crate::args;
 
 pub struct Worker {
-    pub in_file: String,
-    pub dest: String,
-    pub dest_path: Option<PathBuf>
+    pub import_type: args::ImportSubCommands,
+    dest: String
 }
 
 impl Worker {
+
+    pub fn from(_cmd_type: &args::ImportSubCommands) -> Worker {
+        Worker {
+            import_type: _cmd_type.clone(),
+            dest: match &_cmd_type {
+                args::ImportSubCommands::File(_file) => {
+                    _file.destination.clone().unwrap_or(".".to_string())
+                },
+                // args::ImportSubCommands::Link(_link) => {
+                //     _link.destination.clone().unwrap_or(".".to_string())
+                // },
+                args::ImportSubCommands::Clipboard(_copy) => {
+                    _copy.destination.clone().unwrap_or(".".to_string())
+                }
+            }
+        }
+    }
 
     /// Main calling method for struct
     pub fn exec(&self) {
@@ -33,15 +53,77 @@ impl Worker {
             Ok(_) => ()
         }
 
-        let blueprint_string = fs::read_to_string(&self.in_file).unwrap();
+        let blueprint_string: String;
         let blueprint_inflated:String;
+
+        match &self.import_type {
+            args::ImportSubCommands::File(_file) => {
+                match fs::read_to_string(&_file.infile.clone().unwrap()) {
+                    Ok(_str) => blueprint_string = _str,
+                    Err(_) => {
+                        progress_tracker.error_additional("file not found".to_string());
+                        progress_tracker.complete();
+                        exit(1);
+                    },
+                }
+            },
+            // args::ImportSubCommands::Link(_link) => {
+            //     let mut resp: Response;
+            //     match &_link.link {
+            //         Some(_link) => {
+            //             match reqwest::blocking::get(_link) {
+            //                 Ok(_resp) => {
+            //                     resp = _resp;
+            //                 },
+            //                 Err(_) => {
+            //                     progress_tracker.error_additional("invalid link".to_string());
+            //                     progress_tracker.complete();
+            //                     exit(1);
+            //                 },
+            //             }
+            //         },
+            //         None => {
+            //             progress_tracker.error_additional("no link given".to_string());
+            //             progress_tracker.complete();
+            //             exit(1);
+            //         },
+            //     }
+
+            //     match resp.read_to_string(&mut blueprint_string) {
+            //         Ok(_size) => {
+            //             progress_tracker.msg_temp(format!("{} bytes downloaded", _size))
+            //         },
+            //         Err(_) => {
+            //             progress_tracker.error_additional("unable to read to string".to_string());
+            //             progress_tracker.complete();
+            //             exit(1);
+            //         },
+            //     }
+
+            //     // println!("Import link command not impl'd yet!");
+            //     // progress_tracker.complete();
+            //     // exit(1);
+            // },
+            args::ImportSubCommands::Clipboard(_copy) => {
+                let mut clipboard = ClipboardContext::new().unwrap();
+                match clipboard.get_contents() {
+                    Ok(_clipboard) => blueprint_string = _clipboard,
+
+                    Err(_) => {
+                        progress_tracker.error_additional("clipboard empty".to_string());
+                        progress_tracker.complete();
+                        exit(1);
+                    },
+                }
+            },
+        }
 
         match common::factorio_inflate(blueprint_string.as_str()) {
             Ok(blueprint) => {
                 blueprint_inflated = blueprint;
             },
             Err(e) => {
-                println!("{}", e);
+                progress_tracker.error_additional(e.to_string());
                 progress_tracker.complete();
                 exit(1);
             }

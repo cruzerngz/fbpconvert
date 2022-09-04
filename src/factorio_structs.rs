@@ -13,6 +13,9 @@ pub mod fragments {
     pub struct BlueprintFragment {
         #[serde(skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
+
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub icons: Option<Vec<serde_json::Value>>,
         pub item: Option<String>,
         pub label: String,
         pub label_color: Option<Color>,
@@ -24,6 +27,9 @@ pub mod fragments {
     pub struct BookFragment {
         #[serde(skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
+
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub icons: Option<Vec<serde_json::Value>>,
         pub item: Option<String>,
         pub label: String,
         pub label_color: Option<Color>,
@@ -60,9 +66,10 @@ pub mod importable {
 /// Exporting is converting a directory or a JSON file to a blueprint string.
 pub mod exportable {
     use super::*;
+    pub use importable::BlueprintHead as Blueprint;
 
     #[derive(Serialize, Deserialize, Debug)]
-    pub struct BookDotFileHead { //used in export
+    pub struct BookDotFileRecursive { //used in export
         pub blueprint_book: BookDotFile,
 
         #[serde(skip_serializing_if = "Option::is_none")]
@@ -75,6 +82,9 @@ pub mod exportable {
 pub struct Book { // used internally
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub icons: Option<Vec<serde_json::Value>>,
     pub item: Option<String>,
     pub label: String,
     pub label_color: Option<Color>,
@@ -96,7 +106,9 @@ pub struct Book { // used internally
 pub struct BookDotFile { //used internally
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub icons: Option<Vec<serde_json::Value>>,
     pub item: Option<String>,
     pub label: String,
 
@@ -119,6 +131,7 @@ pub struct Blueprint { //used internally
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub icons: Option<Vec<serde_json::Value>>,
     pub item: Option<String>,
     pub label: String,
 
@@ -131,9 +144,6 @@ pub struct Blueprint { //used internally
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub tiles: Option<Vec<serde_json::Value>>,
-
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub icons: Option<Vec<serde_json::Value>>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub schedules: Option<Vec<serde_json::Value>>,

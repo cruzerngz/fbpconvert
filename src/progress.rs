@@ -1,6 +1,6 @@
 //! This module handles writing progress to stdout
 
-use std::{io::Write};
+use std::io::{Read, Write};
 
 use crossterm::{
     terminal,
@@ -21,11 +21,6 @@ pub enum ProgressType {
     Book(String),
     Blueprint(String)
 }
-
-// /// Possible errors that can be encountered
-// pub enum ErrorType {
-
-// }
 
 /// Progress tracker for data display.
 pub struct Tracker {
@@ -68,6 +63,25 @@ impl Tracker {
         self.std_out.queue(terminal::Clear(terminal::ClearType::CurrentLine)).unwrap();
         self.std_out.write(format!("{}\t{}\n", "ok".green().bold(), file_name).as_bytes()).unwrap();
         self.std_out.queue(cursor::MoveToPreviousLine(1)).unwrap();
+
+        self.std_out.flush().unwrap();
+    }
+
+    /// Custom non-error message, may be overwritten
+    pub fn msg_temp(&mut self, ok_msg: String) {
+        self.std_out.queue(terminal::Clear(terminal::ClearType::CurrentLine)).unwrap();
+        self.std_out.write(format!("{}\t{}\n", "msg".green().bold(), ok_msg).as_bytes()).unwrap();
+        self.std_out.queue(cursor::MoveToPreviousLine(1)).unwrap();
+
+        self.std_out.flush().unwrap();
+    }
+
+    /// Custom non-error message, does not modify internal struct attributes
+    /// Message not overwritten
+    pub fn msg(&mut self, ok_msg: String) {
+        self.std_out.queue(terminal::Clear(terminal::ClearType::CurrentLine)).unwrap();
+        self.std_out.write(format!("{}\t{}\n", "msg".green().bold(), ok_msg).as_bytes()).unwrap();
+        self.std_out.queue(cursor::MoveToNextLine(1)).unwrap();
 
         self.std_out.flush().unwrap();
     }
@@ -125,6 +139,21 @@ impl Tracker {
         self.std_out.queue(cursor::Show).unwrap();
         self.std_out.flush().unwrap();
     }
+
+    /// Waits for a keypress before continuing
+    pub fn pause(message: String) {
+        std::io::stdout().write(format!(
+            "{}\n{}",
+            message,
+            "press any key to continue...".green().bold()
+            )
+            .as_bytes()
+        ).unwrap();
+        std::io::stdout().queue(cursor::MoveToNextLine(1)).unwrap();
+        std::io::stdout().flush().unwrap();
+        std::io::stdin().read(&mut [0]).unwrap();
+    }
+
 }
 
 #[cfg(test)]
