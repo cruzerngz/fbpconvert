@@ -5,20 +5,17 @@ pub use self::commands::*;
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
 pub struct MainCliArgs {
-
     #[clap(subcommand)]
     pub command: MainSubCommands,
 
     /// Show what the program is doing
     #[clap(short, long)]
-    pub verbose: bool
-
+    pub verbose: bool,
 }
 
 /// This enum contains the various subcommands available
 #[derive(Parser, Debug)]
 pub enum MainSubCommands {
-
     /// Import a blueprint string
     #[clap(arg_required_else_help = true)]
     #[clap(subcommand)]
@@ -27,7 +24,7 @@ pub enum MainSubCommands {
     /// Export a single file or JSON tree as a blueprint string
     #[clap(arg_required_else_help = true)]
     #[clap(subcommand)]
-    Export(ExportSubCommands)
+    Export(ExportSubCommands),
 }
 
 #[derive(Parser, Debug, Clone)]
@@ -39,9 +36,8 @@ pub enum ImportSubCommands {
     // /// Import blueprint strings from a link
     // #[clap(arg_required_else_help = true)]
     // Link(ImportLink),
-
     /// Import blueprint strings from the clipboard
-    Clipboard(ImportClipboard) // no arg required
+    Clipboard(ImportClipboard), // no arg required
 }
 
 #[derive(Parser, Debug, Clone)]
@@ -52,7 +48,7 @@ pub enum ExportSubCommands {
 
     /// Export blueprint strings to the clipboard
     #[clap(arg_required_else_help = true)]
-    Clipboard(ExportClipboard)
+    Clipboard(ExportClipboard),
 }
 
 /// Contains CLI flags/arguments for various commands/subcommands
@@ -67,7 +63,7 @@ pub mod commands {
 
         /// Destination directory (optional)
         #[clap(short, long)]
-        pub destination: Option<String>
+        pub destination: Option<String>,
     }
 
     #[derive(Parser, Debug, Clone)]
@@ -78,7 +74,7 @@ pub mod commands {
 
         /// Destination directory (optional)
         #[clap(short, long)]
-        pub destination: Option<String>
+        pub destination: Option<String>,
     }
 
     /// Import string directly
@@ -86,7 +82,7 @@ pub mod commands {
     pub struct ImportClipboard {
         /// Destination directory (optional)
         #[clap(short, long)]
-        pub destination: Option<String>
+        pub destination: Option<String>,
     }
 
     #[derive(Parser, Debug, Clone)]
@@ -101,7 +97,7 @@ pub mod commands {
 
         /// Destination directory (optional)
         #[clap(short, long)]
-        pub destination: Option<String>
+        pub destination: Option<String>,
     }
 
     #[derive(Parser, Debug, Clone)]

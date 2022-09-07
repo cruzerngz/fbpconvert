@@ -1,14 +1,13 @@
 mod args;
-mod import;
-mod export;
 mod common;
+mod export;
 mod factorio_structs;
+mod import;
 mod progress;
 // mod test_constants;
 
 use args::*;
 use clap::Parser;
-
 
 fn main() {
     let main_args = MainCliArgs::parse();
@@ -17,20 +16,19 @@ fn main() {
         MainSubCommands::Import(_cmd_type) => {
             let import_worker = import::Worker::from(_cmd_type);
             import_worker.exec();
-        },
+        }
 
         MainSubCommands::Export(_cmd_type) => {
             let export_worker = export::Worker::from(_cmd_type);
             export_worker.exec();
         }
-
     }
 }
 
 #[cfg(notset)]
 mod test {
     use super::*;
-    use serde_json::{Value, json};
+    use serde_json::{json, Value};
 
     use test_constants::constants::FACTORIO_BP_STRING as SAMPLE_BP;
 
@@ -52,16 +50,12 @@ mod test {
     fn test_import_export_loop() {
         let reference_string: String;
         match common::factorio_inflate(SAMPLE_BP) {
-            Ok(_val) => {
-                reference_string = _val
-            },
+            Ok(_val) => reference_string = _val,
             Err(e) => {
                 panic!("{}", e);
-            },
+            }
         }
 
         let reference_val: Value;
-
-
     }
 }

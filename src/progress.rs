@@ -2,24 +2,19 @@
 
 use std::io::{Read, Write};
 
-use crossterm::{
-    terminal,
-    ExecutableCommand,
-    QueueableCommand,
-    cursor
-};
 use crossterm::style::Stylize;
+use crossterm::{cursor, terminal, ExecutableCommand, QueueableCommand};
 
 /// Type of subcommand: import or export
 pub enum CommandType {
     Import,
-    Export
+    Export,
 }
 
 /// Type of blueprint: book or single blueprint
 pub enum ProgressType {
     Book(String),
-    Blueprint(String)
+    Blueprint(String),
 }
 
 /// Progress tracker for data display.
@@ -33,7 +28,6 @@ pub struct Tracker {
 
 impl Tracker {
     pub fn new(command: CommandType) -> Tracker {
-
         let mut _stdout = std::io::stdout();
         _stdout.execute(cursor::Hide).unwrap();
 
@@ -53,15 +47,19 @@ impl Tracker {
             ProgressType::Book(_book) => {
                 file_name = _book;
                 self.read_books += 1;
-            },
+            }
             ProgressType::Blueprint(_blueprint) => {
                 file_name = _blueprint;
                 self.read_blueprints += 1
             }
         }
 
-        self.std_out.queue(terminal::Clear(terminal::ClearType::CurrentLine)).unwrap();
-        self.std_out.write(format!("{}\t{}\n", "ok".green().bold(), file_name).as_bytes()).unwrap();
+        self.std_out
+            .queue(terminal::Clear(terminal::ClearType::CurrentLine))
+            .unwrap();
+        self.std_out
+            .write(format!("{}\t{}\n", "ok".green().bold(), file_name).as_bytes())
+            .unwrap();
         self.std_out.queue(cursor::MoveToPreviousLine(1)).unwrap();
 
         self.std_out.flush().unwrap();
@@ -69,8 +67,12 @@ impl Tracker {
 
     /// Custom non-error message, may be overwritten
     pub fn msg_temp(&mut self, ok_msg: String) {
-        self.std_out.queue(terminal::Clear(terminal::ClearType::CurrentLine)).unwrap();
-        self.std_out.write(format!("{}\t{}\n", "msg".green().bold(), ok_msg).as_bytes()).unwrap();
+        self.std_out
+            .queue(terminal::Clear(terminal::ClearType::CurrentLine))
+            .unwrap();
+        self.std_out
+            .write(format!("{}\t{}\n", "msg".green().bold(), ok_msg).as_bytes())
+            .unwrap();
         self.std_out.queue(cursor::MoveToPreviousLine(1)).unwrap();
 
         self.std_out.flush().unwrap();
@@ -79,8 +81,12 @@ impl Tracker {
     /// Custom non-error message, does not modify internal struct attributes
     /// Message not overwritten
     pub fn msg(&mut self, ok_msg: String) {
-        self.std_out.queue(terminal::Clear(terminal::ClearType::CurrentLine)).unwrap();
-        self.std_out.write(format!("{}\t{}\n", "msg".green().bold(), ok_msg).as_bytes()).unwrap();
+        self.std_out
+            .queue(terminal::Clear(terminal::ClearType::CurrentLine))
+            .unwrap();
+        self.std_out
+            .write(format!("{}\t{}\n", "msg".green().bold(), ok_msg).as_bytes())
+            .unwrap();
         self.std_out.queue(cursor::MoveToNextLine(1)).unwrap();
 
         self.std_out.flush().unwrap();
@@ -93,7 +99,7 @@ impl Tracker {
             ProgressType::Book(_book) => {
                 file_name = _book;
                 self.read_books += 1;
-            },
+            }
             ProgressType::Blueprint(_blueprint) => {
                 file_name = _blueprint;
                 self.read_blueprints += 1
@@ -101,13 +107,19 @@ impl Tracker {
         }
         self.errors += 1;
 
-        self.std_out.queue(terminal::Clear(terminal::ClearType::CurrentLine)).unwrap();
-        self.std_out.write(format!("{}\t{}\n", "err".red().bold(), file_name).as_bytes()).unwrap();
+        self.std_out
+            .queue(terminal::Clear(terminal::ClearType::CurrentLine))
+            .unwrap();
+        self.std_out
+            .write(format!("{}\t{}\n", "err".red().bold(), file_name).as_bytes())
+            .unwrap();
         match err_msg {
             Some(message) => {
-                self.std_out.write(format!("{}\t{}\n", "msg".red().bold(), message).as_bytes()).unwrap();
-            },
-            None => ()
+                self.std_out
+                    .write(format!("{}\t{}\n", "msg".red().bold(), message).as_bytes())
+                    .unwrap();
+            }
+            None => (),
         }
         self.std_out.queue(cursor::MoveToNextLine(1)).unwrap();
 
@@ -116,8 +128,12 @@ impl Tracker {
 
     /// Custom error, does not modify internal struct attributes
     pub fn error_additional(&mut self, err_msg: String) {
-        self.std_out.queue(terminal::Clear(terminal::ClearType::CurrentLine)).unwrap();
-        self.std_out.write(format!("{}\t{}\n", "err".red().bold(), err_msg).as_bytes()).unwrap();
+        self.std_out
+            .queue(terminal::Clear(terminal::ClearType::CurrentLine))
+            .unwrap();
+        self.std_out
+            .write(format!("{}\t{}\n", "err".red().bold(), err_msg).as_bytes())
+            .unwrap();
         self.std_out.queue(cursor::MoveToNextLine(1)).unwrap();
 
         self.std_out.flush().unwrap();
@@ -125,16 +141,23 @@ impl Tracker {
 
     /// Updates stdout with final progress statistics
     pub fn complete(&mut self) {
-        self.std_out.queue(terminal::Clear(terminal::ClearType::CurrentLine)).unwrap();
-        self.std_out.write(format!(
-            "{}\t{}\n{}\t\t{}\n{}\t\t{}\n",
-            "blueprints".green().bold(),
-            self.read_blueprints,
-            "books".green().bold(),
-            self.read_books,
-            "errors".green().bold(),
-            self.errors
-        ).as_bytes()).unwrap();
+        self.std_out
+            .queue(terminal::Clear(terminal::ClearType::CurrentLine))
+            .unwrap();
+        self.std_out
+            .write(
+                format!(
+                    "{}\t{}\n{}\t\t{}\n{}\t\t{}\n",
+                    "blueprints".green().bold(),
+                    self.read_blueprints,
+                    "books".green().bold(),
+                    self.read_books,
+                    "errors".green().bold(),
+                    self.errors
+                )
+                .as_bytes(),
+            )
+            .unwrap();
 
         self.std_out.queue(cursor::Show).unwrap();
         self.std_out.flush().unwrap();
@@ -142,25 +165,27 @@ impl Tracker {
 
     /// Waits for a keypress before continuing
     pub fn pause(message: String) {
-        std::io::stdout().write(format!(
-            "{}\n{}",
-            message,
-            "press any key to continue...".green().bold()
+        std::io::stdout()
+            .write(
+                format!(
+                    "{}\n{}",
+                    message,
+                    "press any key to continue...".green().bold()
+                )
+                .as_bytes(),
             )
-            .as_bytes()
-        ).unwrap();
+            .unwrap();
         std::io::stdout().queue(cursor::MoveToNextLine(1)).unwrap();
         std::io::stdout().flush().unwrap();
         std::io::stdin().read(&mut [0]).unwrap();
     }
-
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
-    use ProgressType::*;
     use std::{thread, time};
+    use ProgressType::*;
 
     #[test]
     fn progress_loop() {
@@ -168,7 +193,10 @@ mod test {
 
         for i in 1..50 {
             if i % 7 == 0 {
-                progress_indicator.error(Book(format!("what? {}", i)), Some("Idk man some error occured".to_string()));
+                progress_indicator.error(
+                    Book(format!("what? {}", i)),
+                    Some("Idk man some error occured".to_string()),
+                );
             } else {
                 progress_indicator.ok(Blueprint(format!("everyting is going well: {}", i)));
             }
@@ -177,5 +205,4 @@ mod test {
 
         progress_indicator.complete();
     }
-
 }

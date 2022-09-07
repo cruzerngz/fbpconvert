@@ -1,14 +1,14 @@
-use std::path::PathBuf;
 use std::fs;
+use std::path::PathBuf;
 use std::process::exit;
 
-use serde_json::Value;
 use copypasta::{self, ClipboardContext, ClipboardProvider};
+use serde_json::Value;
 
-use crate::factorio_structs::{exportable, self};
-use crate::common;
-use crate::progress::{self, ProgressType};
 use crate::args;
+use crate::common;
+use crate::factorio_structs::{self, exportable};
+use crate::progress::{self, ProgressType};
 
 /// Prefix for exported blueprints
 const PREFIX_OUT: &str = "fbpconvert-bp_";
@@ -17,12 +17,11 @@ pub struct Worker {
     pub export_type: args::ExportSubCommands,
     pub source: String,
     pub out_file: Option<String>,
-    pub dest: Option<String>
+    pub dest: Option<String>,
 }
 
 impl Worker {
-
-    pub fn from(export_file: &args::ExportSubCommands) -> Worker{
+    pub fn from(export_file: &args::ExportSubCommands) -> Worker {
         let source: String;
         let out_file: Option<String>;
         let dest: Option<String>;
@@ -32,19 +31,19 @@ impl Worker {
                 source = _file.source.clone().unwrap();
                 out_file = _file.outfile.clone();
                 dest = _file.destination.clone();
-            },
+            }
             args::ExportSubCommands::Clipboard(_copy) => {
                 source = _copy.source.clone().unwrap();
                 out_file = None;
                 dest = None;
-            },
+            }
         }
 
-        Worker{
+        Worker {
             export_type: export_file.clone(),
             source,
             out_file,
-            dest
+            dest,
         }
     }
 
@@ -53,14 +52,14 @@ impl Worker {
         let mut progress_tracker = progress::Tracker::new(progress::CommandType::Export);
 
         let source_path = PathBuf::from(&self.source);
-        let mut read_json_value =  serde_json::json!({});
+        let mut read_json_value = serde_json::json!({});
 
         match source_path.extension() {
-            Some(ext) => { // read single file
+            Some(ext) => {
+                // read single file
                 if ext.eq_ignore_ascii_case("json") {
                     match Worker::read_blueprint(&source_path) {
                         Ok(json_object) => {
-
                             // remove unnecessary "index" key-val at head of bp
                             let strip_index = |json_object: Value| -> Result<Value, String> {
                                 let mut bp: factorio_structs::exportable::Blueprint;
@@ -70,9 +69,11 @@ impl Worker {
                                         bp.index = None;
                                         match serde_json::to_value(bp) {
                                             Ok(_val) => Ok(_val),
-                                            Err(_) => Err("unable to convert from Value".to_string()),
+                                            Err(_) => {
+                                                Err("unable to convert from Value".to_string())
+                                            }
                                         }
-                                    },
+                                    }
                                     Err(_) => Err("unable to convert to Value".to_string()),
                                 }
                             };
@@ -80,48 +81,38 @@ impl Worker {
                             match strip_index(json_object) {
                                 Ok(_val) => {
                                     read_json_value = _val;
-                                    progress_tracker.ok(
+                                    progress_tracker.ok(ProgressType::Blueprint(
+                                        source_path.to_str().unwrap().to_string(),
+                                    ))
+                                }
+                                Err(err_msg) => {
+                                    progress_tracker.error(
                                         ProgressType::Blueprint(
-                                            source_path
-                                                .to_str()
-                                                .unwrap()
-                                                .to_string()
-                                        )
-                                    )
-                                },
-                                Err(err_msg) => {progress_tracker.error(
-                                    ProgressType::Blueprint(source_path
-                                        .to_str()
-                                        .unwrap()
-                                        .to_string()),
-                                    Some(err_msg));
+                                            source_path.to_str().unwrap().to_string(),
+                                        ),
+                                        Some(err_msg),
+                                    );
                                     progress_tracker.complete();
                                     exit(1);
                                 }
                             }
-                        },
-                        Err(err_msg) => {
-                            progress_tracker.error(
-                                ProgressType::Blueprint(source_path
-                                    .to_str()
-                                    .unwrap()
-                                    .to_string()
-                                ),
-                                Some(err_msg)
-                            )
                         }
+                        Err(err_msg) => progress_tracker.error(
+                            ProgressType::Blueprint(source_path.to_str().unwrap().to_string()),
+                            Some(err_msg),
+                        ),
                     }
                 } else {
                     progress_tracker.error_additional(format!("Invalid file extension: {:?}", ext));
                     progress_tracker.complete();
                     exit(1);
                 }
-            },
+            }
 
-            None => { // read blueprint book (recursive)
+            None => {
+                // read blueprint book (recursive)
                 match Worker::read_book_recursive(&mut progress_tracker, &source_path) {
                     Ok(json_object) => {
-
                         // remove unnecessary "index" key-val at head of bp
                         let strip_index = |json_object: Value| -> Result<Value, String> {
                             let mut bp: factorio_structs::exportable::BookDotFileRecursive;
@@ -133,7 +124,7 @@ impl Worker {
                                         Ok(_val) => Ok(_val),
                                         Err(_) => Err("unable to convert from Value".to_string()),
                                     }
-                                },
+                                }
                                 Err(_) => Err("unable to convert to Value".to_string()),
                             }
                         };
@@ -141,33 +132,27 @@ impl Worker {
                         match strip_index(json_object) {
                             Ok(_val) => {
                                 read_json_value = _val;
-                                progress_tracker.ok(
+                                progress_tracker.ok(ProgressType::Blueprint(
+                                    source_path.to_str().unwrap().to_string(),
+                                ))
+                            }
+                            Err(err_msg) => {
+                                progress_tracker.error(
                                     ProgressType::Blueprint(
-                                        source_path
-                                            .to_str()
-                                            .unwrap()
-                                            .to_string()
-                                    )
-                                )
-                            },
-                            Err(err_msg) => {progress_tracker.error(
-                                ProgressType::Blueprint(source_path
-                                    .to_str()
-                                    .unwrap()
-                                    .to_string()),
-                                Some(err_msg));
+                                        source_path.to_str().unwrap().to_string(),
+                                    ),
+                                    Some(err_msg),
+                                );
                                 progress_tracker.complete();
                                 exit(1);
                             }
                         }
-                    },
+                    }
                     Err(err_msg) => {
                         progress_tracker.error(
-                            ProgressType::Book(source_path
-                                .to_str()
-                                .unwrap()
-                                .to_string()),
-                            Some(err_msg));
+                            ProgressType::Book(source_path.to_str().unwrap().to_string()),
+                            Some(err_msg),
+                        );
                         progress_tracker.complete();
                         exit(1);
                     }
@@ -185,13 +170,14 @@ impl Worker {
                         progress_tracker.error_additional(err_msg);
                     }
                 }
-            },
+            }
 
             args::ExportSubCommands::Clipboard(_) => {
                 let mut clipboard = ClipboardContext::new().unwrap();
                 match serde_json::to_string(&read_json_value) {
                     Ok(blueprint_string) => {
-                        let blueprint_string_deflated = common::factorio_deflate(blueprint_string.as_ref());
+                        let blueprint_string_deflated =
+                            common::factorio_deflate(blueprint_string.as_ref());
                         match clipboard.set_contents(blueprint_string_deflated.clone()) {
                             Ok(_) => {
                                 // for some reason there needs to be a small pause here
@@ -199,14 +185,17 @@ impl Worker {
                                 std::thread::sleep(std::time::Duration::from_millis(100));
                                 // progress::Tracker::pause(
                                 //     format!("Blueprint copied into clipboard. Paste the string before exiting."))
-                            },
-                            Err(_) => progress_tracker
-                            .error_additional("failed to copy blueprint string to clipboard".to_string())
+                            }
+                            Err(_) => progress_tracker.error_additional(
+                                "failed to copy blueprint string to clipboard".to_string(),
+                            ),
                         }
-                    },
-                    Err(_) => progress_tracker.error_additional("serde_json serialize error".to_string())
+                    }
+                    Err(_) => {
+                        progress_tracker.error_additional("serde_json serialize error".to_string())
+                    }
                 }
-            },
+            }
         }
 
         progress_tracker.complete();
@@ -215,18 +204,15 @@ impl Worker {
     /// Returns the complete blueprint JSON, given a file name
     /// Returns an error message if an error occurs
     fn read_blueprint(bp_file_path: &PathBuf) -> Result<Value, String> {
-
         if !bp_file_path.is_file() {
             println!("{:?}", bp_file_path);
             return Err("not a file".to_string());
         }
         match bp_file_path.extension() {
-            None => {
-                return Err("no file extension".to_string())
-            }
+            None => return Err("no file extension".to_string()),
             Some(file_ext) => {
                 if !file_ext.eq_ignore_ascii_case("json") {
-                    return Err("wrong file extension".to_string())
+                    return Err("wrong file extension".to_string());
                 }
             }
         }
@@ -245,43 +231,38 @@ impl Worker {
                 }
 
                 return Ok(json_contents);
-            },
-            Err(_) => {return Err(
-                bp_file_path
-                    .to_str()
-                    .unwrap()
-                    .to_string()
-                );
+            }
+            Err(_) => {
+                return Err(bp_file_path.to_str().unwrap().to_string());
             }
         }
-
     }
 
     /// Recursively searches the directory to rebuild the blueprint book
     /// Returns an error message if an error occurs
     fn read_book_recursive(
         prog_tracker: &mut progress::Tracker,
-        bp_book_dir_path: &PathBuf
+        bp_book_dir_path: &PathBuf,
     ) -> Result<Value, String> {
         // println!("reading: {:?}", &bp_book_dir_path);
 
         let book_name = bp_book_dir_path.file_name().unwrap().to_str().unwrap();
         let mut dot_file_path = bp_book_dir_path.clone();
         let current_dir_path = bp_book_dir_path.clone(); // used in recursion
-        // set the dotfile path
+                                                         // set the dotfile path
         dot_file_path.push(format!(".{}.json", book_name));
 
         let dot_file_contents: String;
         match fs::read_to_string(&dot_file_path) {
             Ok(_file) => dot_file_contents = _file,
-            Err(_) => return Err("failed to read dotfile".to_string())
+            Err(_) => return Err("failed to read dotfile".to_string()),
         }
 
         let mut book_object: exportable::BookDotFileRecursive;
 
         match serde_json::from_str(dot_file_contents.as_ref()) {
             Ok(_book) => book_object = _book,
-            Err(_) => return Err("failed to deserialize contents".to_string())
+            Err(_) => return Err("failed to deserialize contents".to_string()),
         }
 
         book_object.blueprint_book.blueprints = Some(vec![]);
@@ -292,10 +273,8 @@ impl Worker {
         match &book_object.blueprint_book.order {
             Some(unknown_bps) => {
                 for unknown_blueprint in unknown_bps.iter() {
-
                     match &unknown_blueprint.blueprint {
                         Some(known_bp) => {
-
                             let mut known_bp_path = current_dir_path.clone();
                             known_bp_path.push(&known_bp.label);
                             known_bp_path.set_extension("json");
@@ -304,46 +283,46 @@ impl Worker {
                             match Worker::read_blueprint(&known_bp_path) {
                                 Ok(_bp_obj) => {
                                     known_bp_object = Some(_bp_obj);
-                                    prog_tracker.ok(
-                                        ProgressType::Blueprint(
-                                            known_bp_path.file_name()
-                                                .unwrap()
-                                                .to_str()
-                                                .unwrap()
-                                                .to_string()
-                                        )
-                                    )
-                                },
+                                    prog_tracker.ok(ProgressType::Blueprint(
+                                        known_bp_path
+                                            .file_name()
+                                            .unwrap()
+                                            .to_str()
+                                            .unwrap()
+                                            .to_string(),
+                                    ))
+                                }
                                 Err(err_msg) => {
                                     known_bp_object = None;
                                     prog_tracker.error(
                                         ProgressType::Blueprint(
-                                            known_bp_path.file_name()
+                                            known_bp_path
+                                                .file_name()
                                                 .unwrap()
                                                 .to_str()
                                                 .unwrap()
-                                                .to_string()
+                                                .to_string(),
                                         ),
-                                        Some(err_msg)
+                                        Some(err_msg),
                                     )
                                 }
                             }
 
                             match known_bp_object {
                                 Some(_bp_obj) => {
-                                    if let Some(blueprint_vec) = &mut book_object.blueprint_book.blueprints {
+                                    if let Some(blueprint_vec) =
+                                        &mut book_object.blueprint_book.blueprints
+                                    {
                                         blueprint_vec.push(_bp_obj);
                                     }
-                                },
-                                None => ()
+                                }
+                                None => (),
                             }
-
-                        },
-                        None => ()
+                        }
+                        None => (),
                     }
                     match &unknown_blueprint.blueprint_book {
                         Some(known_book) => {
-
                             let mut known_book_path = current_dir_path.clone();
                             known_book_path.push(&known_book.label);
 
@@ -352,62 +331,57 @@ impl Worker {
                                 Ok(_book_obj) => {
                                     known_book_object = Some(_book_obj);
                                     prog_tracker.ok(ProgressType::Book(
-                                        known_book_path.file_name()
+                                        known_book_path
+                                            .file_name()
                                             .unwrap()
                                             .to_str()
                                             .unwrap()
-                                            .to_string()
-                                        )
-                                    )
-                                },
+                                            .to_string(),
+                                    ))
+                                }
                                 Err(err_msg) => {
                                     known_book_object = None;
-                                    prog_tracker.error(ProgressType::Book(
-                                        known_book_path.file_name()
-                                            .unwrap()
-                                            .to_str()
-                                            .unwrap()
-                                            .to_string()
+                                    prog_tracker.error(
+                                        ProgressType::Book(
+                                            known_book_path
+                                                .file_name()
+                                                .unwrap()
+                                                .to_str()
+                                                .unwrap()
+                                                .to_string(),
                                         ),
-                                        Some(err_msg)
+                                        Some(err_msg),
                                     );
                                 }
                             }
 
                             match known_book_object {
                                 Some(_book_obj) => {
-                                    if let Some(blueprint_vec) = &mut book_object.blueprint_book.blueprints {
+                                    if let Some(blueprint_vec) =
+                                        &mut book_object.blueprint_book.blueprints
+                                    {
                                         blueprint_vec.push(_book_obj);
                                     }
-                                },
-                                None => ()
+                                }
+                                None => (),
                             }
-                        },
-                        None => ()
+                        }
+                        None => (),
                     }
                 }
             }
-            None => ()
+            None => (),
         }
 
         match serde_json::to_value(book_object) {
-            Ok(_val) => {
-                Ok(_val)
-            },
-            Err(_) => {
-                Err("failed to convert typed struct to serde_json::Value".to_string())
-            }
+            Ok(_val) => Ok(_val),
+            Err(_) => Err("failed to convert typed struct to serde_json::Value".to_string()),
         }
-
     }
 
     /// Takes the blueprint and writes it to a destination.
     /// Returns an error message if it occurs
-    pub fn write_blueprint_to_file(
-        &self,
-        blueprint_json: &Value,
-    ) -> Result<(),String> {
-
+    pub fn write_blueprint_to_file(&self, blueprint_json: &Value) -> Result<(), String> {
         let mut write_dest: PathBuf = PathBuf::new();
         if let Some(_dir) = &self.dest {
             write_dest.push(_dir);
@@ -419,29 +393,28 @@ impl Worker {
             match common::BlueprintType::classify(&blueprint_json) {
                 common::BlueprintType::Invalid => {
                     return Err("failed to determine blueprint type".to_string())
-                },
+                }
                 common::BlueprintType::Blueprint(name) => {
                     file_name = name;
-                },
+                }
                 common::BlueprintType::Book(name) => {
                     file_name = name;
                 }
             }
-            write_dest.push(format!("{}{}",PREFIX_OUT, file_name));
+            write_dest.push(format!("{}{}", PREFIX_OUT, file_name));
         }
 
         match serde_json::to_string(blueprint_json) {
             Ok(blueprint_string) => {
                 let blueprint_string_deflated = common::factorio_deflate(blueprint_string.as_ref());
                 match fs::write(write_dest, blueprint_string_deflated.as_bytes()) {
-                    Ok(_) => {return Ok(())},
+                    Ok(_) => return Ok(()),
                     Err(_) => {
                         return Err("file write error".to_string());
                     }
                 }
-            },
-            Err(_) => return Err("serde_json serialize error".to_string())
+            }
+            Err(_) => return Err("serde_json serialize error".to_string()),
         }
-
     }
 }

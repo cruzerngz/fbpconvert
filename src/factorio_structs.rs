@@ -19,7 +19,7 @@ pub mod fragments {
         pub item: Option<String>,
         pub label: String,
         pub label_color: Option<Color>,
-        pub version: u64
+        pub version: u64,
     }
 
     /// Blueprint book
@@ -34,7 +34,7 @@ pub mod fragments {
         pub label: String,
         pub label_color: Option<Color>,
         pub active_index: u32,
-        pub version: u64
+        pub version: u64,
     }
 }
 
@@ -45,20 +45,22 @@ pub mod importable {
 
     /// Head of the blueprint book
     #[derive(Serialize, Deserialize, Debug)]
-    pub struct BookHead { //used in import
+    pub struct BookHead {
+        //used in import
         pub blueprint_book: Book,
 
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub index: Option<u16>
+        pub index: Option<u16>,
     }
 
     /// Head of blueprint, to factorio spec
     #[derive(Serialize, Deserialize, Debug)]
-    pub struct BlueprintHead { // used in import
+    pub struct BlueprintHead {
+        // used in import
         pub blueprint: Blueprint,
 
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub index: Option<u16>
+        pub index: Option<u16>,
     }
 }
 
@@ -69,17 +71,19 @@ pub mod exportable {
     pub use importable::BlueprintHead as Blueprint;
 
     #[derive(Serialize, Deserialize, Debug)]
-    pub struct BookDotFileRecursive { //used in export
+    pub struct BookDotFileRecursive {
+        //used in export
         pub blueprint_book: BookDotFile,
 
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub index: Option<u16>
+        pub index: Option<u16>,
     }
 }
 
 /// Blueprint book with additional parameter containing the order of it's child blueprints
 #[derive(Serialize, Deserialize, Debug)]
-pub struct Book { // used internally
+pub struct Book {
+    // used internally
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 
@@ -99,11 +103,12 @@ pub struct Book { // used internally
     /// Used for storing the blueprint order inside a book
     /// Contains the child blueprints/books, renamed to "order"
     #[serde(rename(serialize = "order", deserialize = "blueprints"))]
-    pub order: Option<Vec<UnknownBlueprintType>>
+    pub order: Option<Vec<UnknownBlueprintType>>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct BookDotFile { //used internally
+pub struct BookDotFile {
+    //used internally
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
 
@@ -123,11 +128,12 @@ pub struct BookDotFile { //used internally
     /// Blueprint order in book, not part of factorio spec.
     /// This attribute is not serialized
     #[serde(skip_serializing)]
-    pub order: Option<Vec<UnknownBlueprintType>>
+    pub order: Option<Vec<UnknownBlueprintType>>,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct Blueprint { //used internally
+pub struct Blueprint {
+    //used internally
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -150,15 +156,17 @@ pub struct Blueprint { //used internally
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct Color { //used internally
+pub struct Color {
+    //used internally
     pub r: f32,
     pub g: f32,
     pub b: f32,
-    pub a: f32
+    pub a: f32,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct UnknownBlueprintType { //used in common
+pub struct UnknownBlueprintType {
+    //used in common
     #[serde(skip_serializing_if = "Option::is_none")]
     pub blueprint_book: Option<fragments::BookFragment>,
 
@@ -166,5 +174,5 @@ pub struct UnknownBlueprintType { //used in common
     pub blueprint: Option<fragments::BlueprintFragment>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub index: Option<u16>
+    pub index: Option<u16>,
 }

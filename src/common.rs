@@ -9,36 +9,35 @@ pub const INVALID_CHARS: &str = r#" ./\<>:"|?*"#;
 pub enum BlueprintType {
     Invalid,
     Book(String),
-    Blueprint(String)
+    Blueprint(String),
 }
 
 impl BlueprintType {
     /// Determines the blueprint type, returning an enum with the enclosing blueprint's name
     pub fn classify(given_bp: &Value) -> BlueprintType {
-
         let unknown_bp_type: factorio_structs::UnknownBlueprintType;
         match serde_json::from_value(given_bp.clone()) {
             Ok(_val) => {
                 unknown_bp_type = _val;
-            },
+            }
             Err(e) => {
                 println!("Error: {}", e);
-                return BlueprintType::Invalid
-            },
+                return BlueprintType::Invalid;
+            }
         }
 
         match unknown_bp_type.blueprint_book {
             Some(bp_book) => {
                 return BlueprintType::Book(bp_book.label);
             }
-            None => ()
+            None => (),
         }
 
         match unknown_bp_type.blueprint {
             Some(bp) => {
                 return BlueprintType::Blueprint(bp.label);
             }
-            None => ()
+            None => (),
         }
 
         return BlueprintType::Invalid;
@@ -46,14 +45,16 @@ impl BlueprintType {
 }
 
 /// Inflate the blueprint string according to factorio spec
-pub fn factorio_inflate(bp_string: &str) -> Result<String, &str>{
+pub fn factorio_inflate(bp_string: &str) -> Result<String, &str> {
     // skip first byte, then base64 decode
     let decoded = base64::decode(bp_string[1..].as_bytes());
 
     let pre_inflate;
     match decoded {
         Err(_) => return Err(&"Base64 decode error!"),
-        _ => {pre_inflate = decoded.unwrap();}
+        _ => {
+            pre_inflate = decoded.unwrap();
+        }
     }
 
     let inflated = inflate::inflate_bytes_zlib(&pre_inflate);
@@ -61,14 +62,11 @@ pub fn factorio_inflate(bp_string: &str) -> Result<String, &str>{
     match inflated {
         Err(_) => {
             return Err(&"zlib inflate error!");
-        },
-        _ => ()
+        }
+        _ => (),
     }
 
-    return Ok(
-        std::str::from_utf8(&inflated.unwrap())
-            .unwrap().to_string()
-    )
+    return Ok(std::str::from_utf8(&inflated.unwrap()).unwrap().to_string());
 }
 
 /// Deflate the blueprint string according to factorio spec
@@ -108,9 +106,7 @@ mod test {
     #[test]
     fn test_classify_invalid_empty() {
         assert!(matches!(
-            BlueprintType::classify(
-                &json!({})
-            ),
+            BlueprintType::classify(&json!({})),
             BlueprintType::Invalid
         ));
     }
@@ -118,13 +114,11 @@ mod test {
     #[test]
     fn test_classify_invalid_nonsense() {
         assert!(matches!(
-            BlueprintType::classify(
-                &json!({
-                    "blueprints": {
-                        "asd": "xyz"
-                    }
-                })
-            ),
+            BlueprintType::classify(&json!({
+                "blueprints": {
+                    "asd": "xyz"
+                }
+            })),
             BlueprintType::Invalid
         ));
     }
@@ -132,31 +126,27 @@ mod test {
     #[test]
     fn test_classify_valid_bp() {
         assert!(matches!(
-            BlueprintType::classify(
-                &json!({
-                    "blueprint": {
-                        "item": "asd",
-                        "label": "blueprint_thang",
-                        "version": 1234567890
-                    }
-                })
-            ),
+            BlueprintType::classify(&json!({
+                "blueprint": {
+                    "item": "asd",
+                    "label": "blueprint_thang",
+                    "version": 1234567890
+                }
+            })),
             BlueprintType::Blueprint(_)
         ));
     }
     #[test]
     fn test_classify_valid_book() {
         assert!(matches!(
-            BlueprintType::classify(
-                &json!({
-                    "blueprint_book": {
-                        "item": "asd",
-                        "label": "blueprint_thang",
-                        "active_index": 0,
-                        "version": 1234567890
-                    }
-                })
-            ),
+            BlueprintType::classify(&json!({
+                "blueprint_book": {
+                    "item": "asd",
+                    "label": "blueprint_thang",
+                    "active_index": 0,
+                    "version": 1234567890
+                }
+            })),
             BlueprintType::Book(_)
         ));
     }
