@@ -1,4 +1,5 @@
 use clap::Parser;
+use clap_complete::{self, Shell, generate, Generator};
 
 pub use self::commands::*;
 
@@ -11,6 +12,11 @@ pub struct MainCliArgs {
     /// Show what the program is doing
     #[clap(short, long)]
     pub verbose: bool,
+
+    // Outputs the completion file for a given shell
+    #[arg(value_enum)]
+    #[clap(short, long)]
+    pub generator: Option<Shell>,
 }
 
 /// This enum contains the various subcommands available
@@ -64,6 +70,11 @@ pub mod commands {
         /// Destination directory (optional)
         #[clap(short, long)]
         pub destination: Option<String>,
+
+        /// Inflate blueprint string only. Writes contents to file.
+        #[cfg(debug_assertions)]
+        #[clap(long)]
+        pub inflate_only: bool,
     }
 
     #[derive(Parser, Debug, Clone)]
@@ -83,6 +94,11 @@ pub mod commands {
         /// Destination directory (optional)
         #[clap(short, long)]
         pub destination: Option<String>,
+
+        /// Inflate blueprint string only. Writes contents to file.
+        #[cfg(debug_assertions)]
+        #[clap(long)]
+        pub inflate_only: bool,
     }
 
     #[derive(Parser, Debug, Clone)]

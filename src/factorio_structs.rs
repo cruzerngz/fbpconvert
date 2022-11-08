@@ -4,18 +4,27 @@
 
 use serde::{Deserialize, Serialize};
 
+/// Typedef for arbitiary inner array data structure
+type InnerArray = Vec<serde_json::Value>;
+
+#[allow(dead_code)]
+pub const FACTORIO_BP_BOOK_KEY: &str = "blueprint_book";
+pub const FACTORIO_BP_KEY: &str = "blueprint";
+pub const FACTORIO_UP_PLANNER_KEY: &str = "upgrade_planner";
+pub const FACTORIO_DECON_PLANNER_KEY: &str = "deconstruction_planner";
+
 /// Structs defined here have a subset of attributes of their factorio equivalents.
 pub mod fragments {
     use super::*;
 
     /// Blueprint parameters except arrays
     #[derive(Serialize, Deserialize, Debug)]
-    pub struct BlueprintFragment {
+    pub struct Blueprint {
         #[serde(skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
 
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub icons: Option<Vec<serde_json::Value>>,
+        pub icons: Option<InnerArray>,
         pub item: Option<String>,
         pub label: String,
         pub label_color: Option<Color>,
@@ -24,17 +33,23 @@ pub mod fragments {
 
     /// Blueprint book
     #[derive(Serialize, Deserialize, Debug)]
-    pub struct BookFragment {
+    pub struct Book {
         #[serde(skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
 
         #[serde(skip_serializing_if = "Option::is_none")]
-        pub icons: Option<Vec<serde_json::Value>>,
+        pub icons: Option<InnerArray>,
         pub item: Option<String>,
         pub label: String,
         pub label_color: Option<Color>,
         pub active_index: u32,
         pub version: u64,
+    }
+
+    /// Con / Des planners
+    #[derive(Serialize, Deserialize, Debug)]
+    pub struct Planner {
+        pub label: String
     }
 }
 
@@ -58,6 +73,22 @@ pub mod importable {
     pub struct BlueprintHead {
         // used in import
         pub blueprint: Blueprint,
+
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub index: Option<u16>,
+    }
+
+    #[derive(Serialize, Deserialize, Debug)]
+    pub struct UpgradeHead {
+        pub upgrade_planner: Planner,
+
+        #[serde(skip_serializing_if = "Option::is_none")]
+        pub index: Option<u16>,
+    }
+
+    #[derive(Serialize, Deserialize, Debug)]
+    pub struct DeconHead {
+        pub deconstruction_planner: Planner,
 
         #[serde(skip_serializing_if = "Option::is_none")]
         pub index: Option<u16>,
@@ -88,7 +119,7 @@ pub struct Book {
     pub description: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub icons: Option<Vec<serde_json::Value>>,
+    pub icons: Option<InnerArray>,
     pub item: Option<String>,
     pub label: String,
     pub label_color: Option<Color>,
@@ -97,7 +128,7 @@ pub struct Book {
 
     #[serde(skip_deserializing)]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub blueprints: Option<Vec<serde_json::Value>>,
+    pub blueprints: Option<InnerArray>,
 
     /// Blueprint order in book, not part of factorio spec.
     /// Used for storing the blueprint order inside a book
@@ -113,7 +144,7 @@ pub struct BookDotFile {
     pub description: Option<String>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub icons: Option<Vec<serde_json::Value>>,
+    pub icons: Option<InnerArray>,
     pub item: Option<String>,
     pub label: String,
 
@@ -123,7 +154,7 @@ pub struct BookDotFile {
     pub version: u64,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub blueprints: Option<Vec<serde_json::Value>>,
+    pub blueprints: Option<InnerArray>,
 
     /// Blueprint order in book, not part of factorio spec.
     /// This attribute is not serialized
@@ -137,7 +168,7 @@ pub struct Blueprint {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub icons: Option<Vec<serde_json::Value>>,
+    pub icons: Option<InnerArray>,
     pub item: Option<String>,
     pub label: String,
 
@@ -146,13 +177,26 @@ pub struct Blueprint {
     pub version: u64,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub entities: Option<Vec<serde_json::Value>>,
+    pub entities: Option<InnerArray>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub tiles: Option<Vec<serde_json::Value>>,
+    pub tiles: Option<InnerArray>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub schedules: Option<Vec<serde_json::Value>>,
+    pub schedules: Option<InnerArray>,
+}
+
+/// Factorio's deconstruction planner / construction planner
+/// both use the same top-level data structure
+#[derive(Serialize, Deserialize, Debug)]
+pub struct Planner {
+    pub settings: serde_json::Value,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub item: Option<String>,
+
+    pub label: String,
+    pub version: u64,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
@@ -168,10 +212,16 @@ pub struct Color {
 pub struct UnknownBlueprintType {
     //used in common
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub blueprint_book: Option<fragments::BookFragment>,
+    pub blueprint_book: Option<fragments::Book>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub blueprint: Option<fragments::BlueprintFragment>,
+    pub blueprint: Option<fragments::Blueprint>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub deconstruction_planner: Option<fragments::Planner>,
+
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub upgrade_planner: Option<fragments::Planner>,
 
     #[serde(skip_serializing_if = "Option::is_none")]
     pub index: Option<u16>,

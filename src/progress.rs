@@ -5,16 +5,13 @@ use std::io::{Read, Write};
 use crossterm::style::Stylize;
 use crossterm::{cursor, terminal, ExecutableCommand, QueueableCommand};
 
+/// Type of blueprint: take from common module
+pub use crate::common::BlueprintType as ProgressType;
+
 /// Type of subcommand: import or export
 pub enum CommandType {
     Import,
     Export,
-}
-
-/// Type of blueprint: book or single blueprint
-pub enum ProgressType {
-    Book(String),
-    Blueprint(String),
 }
 
 /// Progress tracker for data display.
@@ -23,6 +20,7 @@ pub struct Tracker {
     pub command: CommandType,
     pub read_blueprints: u16,
     pub read_books: u16,
+    pub read_planners: u16,
     pub errors: u16,
 }
 
@@ -36,6 +34,7 @@ impl Tracker {
             command,
             read_blueprints: 0,
             read_books: 0,
+            read_planners: 0,
             errors: 0,
         }
     }
@@ -52,6 +51,18 @@ impl Tracker {
                 file_name = _blueprint;
                 self.read_blueprints += 1
             }
+            ProgressType::UpgradePlanner(_planner) => {
+                file_name = _planner;
+                self.read_planners += 1;
+            },
+            ProgressType::DeconPlanner(_planner) => {
+                file_name = _planner;
+                self.read_planners += 1;
+            },
+            ProgressType::Invalid => return
+            // {
+            //     file_name = "invalid?".to_string()
+            // },
         }
 
         self.std_out
@@ -104,6 +115,15 @@ impl Tracker {
                 file_name = _blueprint;
                 self.read_blueprints += 1
             }
+            ProgressType::Invalid => {
+                file_name = "invalid contents".to_string()
+            }
+            ProgressType::UpgradePlanner(_planner) => {
+                file_name = _planner
+            }
+            ProgressType::DeconPlanner(_planner) => {
+                file_name = _planner
+            }
         }
         self.errors += 1;
 
@@ -147,11 +167,13 @@ impl Tracker {
         self.std_out
             .write(
                 format!(
-                    "{}\t{}\n{}\t\t{}\n{}\t\t{}\n",
-                    "blueprints".green().bold(),
-                    self.read_blueprints,
+                    "{}\t\t{}\n{}\t{}\n{}\t{}\n{}\t\t{}\n",
                     "books".green().bold(),
                     self.read_books,
+                    "blueprints".green().bold(),
+                    self.read_blueprints,
+                    "planners".green().bold(),
+                    self.read_planners,
                     "errors".green().bold(),
                     self.errors
                 )

@@ -400,6 +400,9 @@ impl Worker {
                 common::BlueprintType::Book(name) => {
                     file_name = name;
                 }
+                _ => {
+                    return Err("not yet implemented!".to_string())
+                } // temp
             }
             write_dest.push(format!("{}{}", PREFIX_OUT, file_name));
         }
