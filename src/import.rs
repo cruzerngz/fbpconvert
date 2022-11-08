@@ -1,6 +1,6 @@
 use std::fs;
 use std::fs::File;
-use std::io::{Read, Write};
+use std::io::Write;
 use std::path::PathBuf;
 use std::process::exit;
 
@@ -357,6 +357,18 @@ impl Worker {
                 match _unknown.blueprint_book.as_mut() {
                     Some(_book) => {
                         _book.label = common::file_rename(_book.label.clone());
+                    }
+                    None => (),
+                }
+                match _unknown.upgrade_planner.as_mut() {
+                    Some(_planner) => {
+                        _planner.label = common::file_rename(_planner.label.clone());
+                    }
+                    None => (),
+                }
+                match _unknown.deconstruction_planner.as_mut() {
+                    Some(_planner) => {
+                        _planner.label = common::file_rename(_planner.label.clone());
                     }
                     None => (),
                 }

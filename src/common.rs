@@ -10,6 +10,8 @@ pub enum BlueprintType {
     Invalid,
     Book(String),
     Blueprint(String),
+    UpgradePlanner(String),
+    DeconPlanner(String),
 }
 
 impl BlueprintType {
@@ -26,18 +28,20 @@ impl BlueprintType {
             }
         }
 
-        match unknown_bp_type.blueprint_book {
-            Some(bp_book) => {
-                return BlueprintType::Book(bp_book.label);
-            }
-            None => (),
+        if let Some(_book) = unknown_bp_type.blueprint_book {
+            return BlueprintType::Book(_book.label)
         }
 
-        match unknown_bp_type.blueprint {
-            Some(bp) => {
-                return BlueprintType::Blueprint(bp.label);
-            }
-            None => (),
+        if let Some(_bp) = unknown_bp_type.blueprint {
+            return BlueprintType::Blueprint(_bp.label)
+        }
+
+        if let Some(_decon) = unknown_bp_type.deconstruction_planner {
+            return BlueprintType::DeconPlanner(_decon.label)
+        }
+
+        if let Some(_upgrade) = unknown_bp_type.upgrade_planner {
+            return BlueprintType::UpgradePlanner(_upgrade.label)
         }
 
         return BlueprintType::Invalid;
