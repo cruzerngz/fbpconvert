@@ -49,7 +49,7 @@ pub mod fragments {
     /// Con / Des planners
     #[derive(Serialize, Deserialize, Debug)]
     pub struct Planner {
-        pub label: String
+        pub label: String,
     }
 }
 

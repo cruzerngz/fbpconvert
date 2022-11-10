@@ -29,19 +29,19 @@ impl BlueprintType {
         }
 
         if let Some(_book) = unknown_bp_type.blueprint_book {
-            return BlueprintType::Book(_book.label)
+            return BlueprintType::Book(_book.label);
         }
 
         if let Some(_bp) = unknown_bp_type.blueprint {
-            return BlueprintType::Blueprint(_bp.label)
+            return BlueprintType::Blueprint(_bp.label);
         }
 
         if let Some(_decon) = unknown_bp_type.deconstruction_planner {
-            return BlueprintType::DeconPlanner(_decon.label)
+            return BlueprintType::DeconPlanner(_decon.label);
         }
 
         if let Some(_upgrade) = unknown_bp_type.upgrade_planner {
-            return BlueprintType::UpgradePlanner(_upgrade.label)
+            return BlueprintType::UpgradePlanner(_upgrade.label);
         }
 
         return BlueprintType::Invalid;

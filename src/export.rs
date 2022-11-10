@@ -275,7 +275,6 @@ impl Worker {
         match &book_object.blueprint_book.order {
             Some(unknown_bps) => {
                 for unknown_blueprint in unknown_bps.iter() {
-
                     // book
                     if let Some(known_book) = &unknown_blueprint.blueprint_book {
                         let mut known_book_path = current_dir_path.clone();
@@ -462,7 +461,6 @@ impl Worker {
                             None => (),
                         }
                     }
-
                 }
             }
             None => (),

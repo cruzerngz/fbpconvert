@@ -1,5 +1,5 @@
 use clap::Parser;
-use clap_complete::{self, Shell, generate, Generator};
+use clap_complete::{self, generate, Generator, Shell};
 
 pub use self::commands::*;
 

@@ -115,15 +115,9 @@ impl Tracker {
                 file_name = _blueprint;
                 self.read_blueprints += 1
             }
-            ProgressType::Invalid => {
-                file_name = "invalid contents".to_string()
-            }
-            ProgressType::UpgradePlanner(_planner) => {
-                file_name = _planner
-            }
-            ProgressType::DeconPlanner(_planner) => {
-                file_name = _planner
-            }
+            ProgressType::Invalid => file_name = "invalid contents".to_string(),
+            ProgressType::UpgradePlanner(_planner) => file_name = _planner,
+            ProgressType::DeconPlanner(_planner) => file_name = _planner,
         }
         self.errors += 1;
 

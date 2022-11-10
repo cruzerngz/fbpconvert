@@ -53,8 +53,11 @@ impl Worker {
 
         let blueprint_string: String;
         let blueprint_inflated: String;
+
+        #[cfg(debug_assertions)]
         let inflate_only: bool;
 
+        #[cfg(debug_assertions)]
         match &self.import_type {
             args::ImportSubCommands::File(_file) => {
                 match fs::read_to_string(&_file.infile.clone().unwrap()) {
@@ -80,6 +83,33 @@ impl Worker {
                     }
                 }
                 inflate_only = _copy.inflate_only;
+            }
+        }
+
+        #[cfg(not(debug_assertions))]
+        match &self.import_type {
+            args::ImportSubCommands::File(_file) => {
+                match fs::read_to_string(&_file.infile.clone().unwrap()) {
+                    Ok(_str) => blueprint_string = _str,
+                    Err(_) => {
+                        progress_tracker.error_additional("file not found".to_string());
+                        progress_tracker.complete();
+                        exit(1);
+                    }
+                }
+            }
+
+            args::ImportSubCommands::Clipboard(_copy) => {
+                let mut clipboard = ClipboardContext::new().unwrap();
+                match clipboard.get_contents() {
+                    Ok(_clipboard) => blueprint_string = _clipboard,
+
+                    Err(_) => {
+                        progress_tracker.error_additional("clipboard empty".to_string());
+                        progress_tracker.complete();
+                        exit(1);
+                    }
+                }
             }
         }
 
@@ -114,20 +144,24 @@ impl Worker {
             progress_tracker.msg("inflating only...".to_string());
             let mut out_file = File::create("inflated.json").expect("file creation error");
 
-            out_file.write(
-                serde_json::to_string_pretty(&blueprint_obj)
-                .expect("unable to serialize")
-                .as_bytes()
-            ).expect("unable to write to file");
+            out_file
+                .write(
+                    serde_json::to_string_pretty(&blueprint_obj)
+                        .expect("unable to serialize")
+                        .as_bytes(),
+                )
+                .expect("unable to write to file");
             progress_tracker.complete();
             exit(0);
         }
 
         // let blueprint_file_name: String;
         match BlueprintType::classify(&blueprint_obj) {
-
             BlueprintType::Invalid => {
-                progress_tracker.error(ProgressType::Invalid, Some("invalid blueprint!".to_string()));
+                progress_tracker.error(
+                    ProgressType::Invalid,
+                    Some("invalid blueprint!".to_string()),
+                );
                 progress_tracker.complete();
                 exit(1);
             }
@@ -168,7 +202,7 @@ impl Worker {
                     Ok(_) => progress_tracker.ok(ProgressType::DeconPlanner(_planner)),
                     Err(err_msg) => {
                         progress_tracker.error(ProgressType::Blueprint(_planner), Some(err_msg))
-                    },
+                    }
                 }
             }
         }
@@ -228,15 +262,18 @@ impl Worker {
     }
 
     /// Writes a upgrade planner
-    fn upgrade_planner_write(planner: &serde_json::Value, dir_path: &PathBuf) -> Result<(), String> {
+    fn upgrade_planner_write(
+        planner: &serde_json::Value,
+        dir_path: &PathBuf,
+    ) -> Result<(), String> {
         let mut full_planner_path = dir_path.clone();
 
         let mut planner_name = planner
-        .get(factorio_structs::FACTORIO_UP_PLANNER_KEY)
-        .and_then(|value| value.get("label"))
-        .and_then(|value| value.as_str())
-        .unwrap()
-        .to_string();
+            .get(factorio_structs::FACTORIO_UP_PLANNER_KEY)
+            .and_then(|value| value.get("label"))
+            .and_then(|value| value.as_str())
+            .unwrap()
+            .to_string();
 
         let mut planner_compliant: importable::UpgradeHead;
         match serde_json::from_value(planner.to_owned()) {
@@ -270,7 +307,6 @@ impl Worker {
                 // return Err(bp_name);
             }
         }
-
     }
 
     /// Writes a decon / upgrade planner
@@ -278,11 +314,11 @@ impl Worker {
         let mut full_planner_path = dir_path.clone();
 
         let mut planner_name = planner
-        .get(factorio_structs::FACTORIO_DECON_PLANNER_KEY)
-        .and_then(|value| value.get("label"))
-        .and_then(|value| value.as_str())
-        .unwrap()
-        .to_string();
+            .get(factorio_structs::FACTORIO_DECON_PLANNER_KEY)
+            .and_then(|value| value.get("label"))
+            .and_then(|value| value.as_str())
+            .unwrap()
+            .to_string();
 
         let mut planner_compliant: importable::DeconHead;
         match serde_json::from_value(planner.to_owned()) {
@@ -316,7 +352,6 @@ impl Worker {
                 // return Err(bp_name);
             }
         }
-
     }
 
     /// Recursively writes the book and its contents to file, given a known starting dir
@@ -439,14 +474,14 @@ impl Worker {
                                 Err(err_msg) => prog_tracker
                                     .error(ProgressType::Blueprint(_planner), Some(err_msg)),
                             }
-                        },
+                        }
                         BlueprintType::DeconPlanner(_planner) => {
                             match Worker::decon_planner_write(unknown_bp, &current_dir_path) {
                                 Ok(()) => prog_tracker.ok(ProgressType::DeconPlanner(_planner)),
                                 Err(err_msg) => prog_tracker
                                     .error(ProgressType::Blueprint(_planner), Some(err_msg)),
                             }
-                        },
+                        }
                     }
                 }
             }

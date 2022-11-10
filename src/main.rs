@@ -7,7 +7,7 @@ mod progress;
 // mod test_constants;
 
 use args::*;
-use clap::{Parser, CommandFactory};
+use clap::{CommandFactory, Parser};
 use clap_complete::{generate, Generator, Shell};
 
 fn main() {
