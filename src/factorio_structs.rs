@@ -167,6 +167,7 @@ pub struct Blueprint {
     //used internally
     #[serde(skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+
     #[serde(skip_serializing_if = "Option::is_none")]
     pub icons: Option<InnerArray>,
     pub item: Option<String>,
@@ -176,6 +177,16 @@ pub struct Blueprint {
     pub label_color: Option<Color>,
     pub version: u64,
 
+    // blueprint snap stuff
+    #[serde(rename = "snap-to-grid")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub snap_to_grid: Option<GridSnap>,
+
+    #[serde(rename = "absolute-snapping")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub absolute_snapping: Option<bool>,
+
+    // the rest of blueprint stuff
     #[serde(skip_serializing_if = "Option::is_none")]
     pub entities: Option<InnerArray>,
 
@@ -206,6 +217,13 @@ pub struct Color {
     pub g: f32,
     pub b: f32,
     pub a: f32,
+}
+
+/// Coordinates for blueprints that have snap to grid
+#[derive(Serialize, Deserialize, Debug)]
+pub struct GridSnap {
+    pub x: u32,
+    pub y: u32,
 }
 
 #[derive(Serialize, Deserialize, Debug)]
