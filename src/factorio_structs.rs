@@ -186,6 +186,10 @@ pub struct Blueprint {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub absolute_snapping: Option<bool>,
 
+    #[serde(rename = "position-relative-to-grid")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub absolute_pos: Option<GridSnap>,
+
     // the rest of blueprint stuff
     #[serde(skip_serializing_if = "Option::is_none")]
     pub entities: Option<InnerArray>,
