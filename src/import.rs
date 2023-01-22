@@ -431,33 +431,6 @@ impl Worker {
                     None => (),
                 }
             });
-
-            // for _unknown in _order.iter_mut() {
-            //     match _unknown.blueprint.as_mut() {
-            //         Some(_bp) => {
-            //             _bp.label = common::file_rename(_bp.label.clone());
-            //         }
-            //         None => (),
-            //     }
-            //     match _unknown.blueprint_book.as_mut() {
-            //         Some(_book) => {
-            //             _book.label = common::file_rename(_book.label.clone());
-            //         }
-            //         None => (),
-            //     }
-            //     match _unknown.upgrade_planner.as_mut() {
-            //         Some(_planner) => {
-            //             _planner.label = common::file_rename(_planner.label.clone());
-            //         }
-            //         None => (),
-            //     }
-            //     match _unknown.deconstruction_planner.as_mut() {
-            //         Some(_planner) => {
-            //             _planner.label = common::file_rename(_planner.label.clone());
-            //         }
-            //         None => (),
-            //     }
-            // }
         }
 
         // write the dotfile first, then constituent blueprints/books
@@ -554,46 +527,6 @@ impl Worker {
                         }
                     }
                 });
-
-                // for unknown_bp in bp_arr.iter() {
-                //     match BlueprintType::classify(&unknown_bp) {
-                //         BlueprintType::Invalid => (),
-
-                //         BlueprintType::Book(_book_name) => {
-                //             match Worker::recursive_book_write(
-                //                 prog_tracker,
-                //                 &unknown_bp,
-                //                 &current_dir_path,
-                //             ) {
-                //                 Ok(()) => prog_tracker.ok(ProgressType::Book(_book_name)),
-                //                 Err(err_msg) => prog_tracker
-                //                     .error(ProgressType::Book(_book_name), Some(err_msg)),
-                //             }
-                //         }
-
-                //         BlueprintType::Blueprint(_bp_name) => {
-                //             match Worker::blueprint_write(&unknown_bp, &current_dir_path) {
-                //                 Ok(()) => prog_tracker.ok(ProgressType::Blueprint(_bp_name)),
-                //                 Err(err_msg) => prog_tracker
-                //                     .error(ProgressType::Blueprint(_bp_name), Some(err_msg)),
-                //             }
-                //         }
-                //         BlueprintType::UpgradePlanner(_planner) => {
-                //             match Worker::upgrade_planner_write(&unknown_bp, &current_dir_path) {
-                //                 Ok(()) => prog_tracker.ok(ProgressType::UpgradePlanner(_planner)),
-                //                 Err(err_msg) => prog_tracker
-                //                     .error(ProgressType::Blueprint(_planner), Some(err_msg)),
-                //             }
-                //         }
-                //         BlueprintType::DeconPlanner(_planner) => {
-                //             match Worker::decon_planner_write(&unknown_bp, &current_dir_path) {
-                //                 Ok(()) => prog_tracker.ok(ProgressType::DeconPlanner(_planner)),
-                //                 Err(err_msg) => prog_tracker
-                //                     .error(ProgressType::Blueprint(_planner), Some(err_msg)),
-                //             }
-                //         }
-                //     }
-                // }
             }
             _ => (),
         }

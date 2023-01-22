@@ -1,3 +1,4 @@
+use base64::Engine;
 use serde_json::Value;
 
 use crate::factorio_structs;
@@ -51,7 +52,8 @@ impl BlueprintType {
 /// Inflate the blueprint string according to factorio spec
 pub fn factorio_inflate(bp_string: &str) -> Result<String, &str> {
     // skip first byte, then base64 decode
-    let decoded = base64::decode(bp_string[1..].as_bytes());
+    let base64_engine = base64::engine::general_purpose::STANDARD;
+    let decoded = base64_engine.decode(bp_string[1..].as_bytes());
 
     let pre_inflate;
     match decoded {
@@ -77,7 +79,8 @@ pub fn factorio_inflate(bp_string: &str) -> Result<String, &str> {
 pub fn factorio_deflate(bp_string_json: &str) -> String {
     // compress string
     let deflated = deflate::deflate_bytes_zlib(bp_string_json.as_bytes());
-    let encoded = base64::encode(&deflated);
+    let base64_engine = base64::engine::general_purpose::STANDARD;
+    let encoded = base64_engine.encode(&deflated);
 
     // append a 0
     let mut result = "0".to_string();

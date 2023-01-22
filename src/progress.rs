@@ -1,4 +1,5 @@
 //! This module handles writing progress to stdout
+#![allow(unused)]
 
 use std::io::{Read, Write};
 use std::sync::{Arc, Mutex};

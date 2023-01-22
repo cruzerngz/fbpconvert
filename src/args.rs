@@ -1,5 +1,5 @@
 use clap::Parser;
-use clap_complete::{self, generate, Generator, Shell};
+// use clap_complete::{self, generate, Generator, Shell};
 
 pub use self::commands::*;
 
@@ -12,11 +12,10 @@ pub struct MainCliArgs {
     /// Show what the program is doing
     #[clap(short, long)]
     pub verbose: bool,
-
-    // Outputs the completion file for a given shell
-    #[arg(value_enum)]
-    #[clap(short, long)]
-    pub generator: Option<Shell>,
+    // // Outputs the completion file for a given shell
+    // #[arg(value_enum)]
+    // #[clap(short, long)]
+    // pub generator: Option<Shell>,
 }
 
 /// This enum contains the various subcommands available
