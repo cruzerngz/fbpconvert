@@ -1,6 +1,7 @@
 //! This module handles writing progress to stdout
 
 use std::io::{Read, Write};
+use std::sync::{Arc, Mutex};
 
 use crossterm::style::Stylize;
 use crossterm::{cursor, terminal, ExecutableCommand, QueueableCommand};
@@ -37,6 +38,23 @@ impl Tracker {
             read_planners: 0,
             errors: 0,
         }
+    }
+
+    /// Tracker enclosed in reference-counted mutex
+    pub fn new_sync(command: CommandType) -> Arc<Mutex<Tracker>> {
+        let mut _stdout = std::io::stdout();
+        _stdout.execute(cursor::Hide).unwrap();
+
+        let _tracker = Tracker {
+            std_out: _stdout,
+            command,
+            read_blueprints: 0,
+            read_books: 0,
+            read_planners: 0,
+            errors: 0,
+        };
+
+        Arc::new(Mutex::new(_tracker))
     }
 
     /// Called when no error occurs

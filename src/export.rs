@@ -1,8 +1,10 @@
 use std::fs;
 use std::path::PathBuf;
 use std::process::exit;
+use std::sync::{Arc, Mutex};
 
 use copypasta::{self, ClipboardContext, ClipboardProvider};
+use rayon::prelude::*;
 use serde_json::Value;
 
 use crate::args;
@@ -49,7 +51,7 @@ impl Worker {
 
     /// Main calling method for struct
     pub fn exec(&self) {
-        let mut progress_tracker = progress::Tracker::new(progress::CommandType::Export);
+        let mut progress_tracker = progress::Tracker::new_sync(progress::CommandType::Export);
 
         let source_path = PathBuf::from(&self.source);
         let mut read_json_value = serde_json::json!({});
@@ -81,37 +83,39 @@ impl Worker {
                             match strip_index(json_object) {
                                 Ok(_val) => {
                                     read_json_value = _val;
-                                    progress_tracker.ok(ProgressType::Blueprint(
+                                    progress_tracker.lock().unwrap().ok(ProgressType::Blueprint(
                                         source_path.to_str().unwrap().to_string(),
                                     ))
                                 }
                                 Err(err_msg) => {
-                                    progress_tracker.error(
+                                    let mut unlocked = progress_tracker.lock().unwrap();
+                                    unlocked.error(
                                         ProgressType::Blueprint(
                                             source_path.to_str().unwrap().to_string(),
                                         ),
                                         Some(err_msg),
                                     );
-                                    progress_tracker.complete();
+                                    unlocked.complete();
                                     exit(1);
                                 }
                             }
                         }
-                        Err(err_msg) => progress_tracker.error(
+                        Err(err_msg) => progress_tracker.lock().unwrap().error(
                             ProgressType::Blueprint(source_path.to_str().unwrap().to_string()),
                             Some(err_msg),
                         ),
                     }
                 } else {
-                    progress_tracker.error_additional(format!("Invalid file extension: {:?}", ext));
-                    progress_tracker.complete();
+                    let mut unlocked = progress_tracker.lock().unwrap();
+                    unlocked.error_additional(format!("Invalid file extension: {:?}", ext));
+                    unlocked.complete();
                     exit(1);
                 }
             }
 
             None => {
                 // read blueprint book (recursive)
-                progress_tracker.read_books += 1;
+                progress_tracker.lock().unwrap().read_books += 1;
                 match Worker::read_book_recursive(&mut progress_tracker, &source_path) {
                     Ok(json_object) => {
                         // remove unnecessary "index" key-val at head of bp
@@ -133,42 +137,47 @@ impl Worker {
                         match strip_index(json_object) {
                             Ok(_val) => {
                                 read_json_value = _val;
-                                progress_tracker.ok(ProgressType::Blueprint(
+                                progress_tracker.lock().unwrap().ok(ProgressType::Blueprint(
                                     source_path.to_str().unwrap().to_string(),
                                 ))
                             }
                             Err(err_msg) => {
-                                progress_tracker.error(
+                                let mut unlocked = progress_tracker.lock().unwrap();
+                                unlocked.error(
                                     ProgressType::Blueprint(
                                         source_path.to_str().unwrap().to_string(),
                                     ),
                                     Some(err_msg),
                                 );
-                                progress_tracker.complete();
+                                unlocked.complete();
                                 exit(1);
                             }
                         }
                     }
                     Err(err_msg) => {
-                        progress_tracker.error(
+                        let mut unlocked = progress_tracker.lock().unwrap();
+                        unlocked.error(
                             ProgressType::Book(source_path.to_str().unwrap().to_string()),
                             Some(err_msg),
                         );
-                        progress_tracker.complete();
+                        unlocked.complete();
                         exit(1);
                     }
                 }
             }
         }
         // println!("final constructed: {:?}", &read_json_value);
-        progress_tracker.msg_temp("exporting blueprint...".to_string());
+        progress_tracker
+            .lock()
+            .unwrap()
+            .msg_temp("exporting blueprint...".to_string());
 
         match &self.export_type {
             args::ExportSubCommands::File(_) => {
                 match self.write_blueprint_to_file(&read_json_value) {
                     Ok(()) => (),
                     Err(err_msg) => {
-                        progress_tracker.error_additional(err_msg);
+                        progress_tracker.lock().unwrap().error_additional(err_msg);
                     }
                 }
             }
@@ -187,19 +196,20 @@ impl Worker {
                                 // progress::Tracker::pause(
                                 //     format!("Blueprint copied into clipboard. Paste the string before exiting."))
                             }
-                            Err(_) => progress_tracker.error_additional(
+                            Err(_) => progress_tracker.lock().unwrap().error_additional(
                                 "failed to copy blueprint string to clipboard".to_string(),
                             ),
                         }
                     }
-                    Err(_) => {
-                        progress_tracker.error_additional("serde_json serialize error".to_string())
-                    }
+                    Err(_) => progress_tracker
+                        .lock()
+                        .unwrap()
+                        .error_additional("serde_json serialize error".to_string()),
                 }
             }
         }
 
-        progress_tracker.complete();
+        progress_tracker.lock().unwrap().complete();
     }
 
     /// Returns the complete blueprint JSON, given a file name.
@@ -243,7 +253,7 @@ impl Worker {
     /// Recursively searches the directory to rebuild the blueprint book
     /// Returns an error message if an error occurs
     fn read_book_recursive(
-        prog_tracker: &mut progress::Tracker,
+        prog_tracker: &mut Arc<Mutex<progress::Tracker>>,
         bp_book_dir_path: &PathBuf,
     ) -> Result<Value, String> {
         // println!("reading: {:?}", &bp_book_dir_path);
@@ -274,17 +284,20 @@ impl Worker {
         // iterate through the list of stored blueprints
         match &book_object.blueprint_book.order {
             Some(unknown_bps) => {
-                for unknown_blueprint in unknown_bps.iter() {
+                unknown_bps.par_iter().for_each(|unknown_blueprint| {
                     // book
                     if let Some(known_book) = &unknown_blueprint.blueprint_book {
                         let mut known_book_path = current_dir_path.clone();
                         known_book_path.push(&known_book.label);
 
                         let known_book_object: Option<Value>;
-                        match Worker::read_book_recursive(prog_tracker, &known_book_path) {
+                        match Worker::read_book_recursive(
+                            &mut prog_tracker.clone(),
+                            &known_book_path,
+                        ) {
                             Ok(_book_obj) => {
                                 known_book_object = Some(_book_obj);
-                                prog_tracker.ok(ProgressType::Book(
+                                prog_tracker.lock().unwrap().ok(ProgressType::Book(
                                     known_book_path
                                         .file_name()
                                         .unwrap()
@@ -295,7 +308,7 @@ impl Worker {
                             }
                             Err(err_msg) => {
                                 known_book_object = None;
-                                prog_tracker.error(
+                                prog_tracker.lock().unwrap().error(
                                     ProgressType::Book(
                                         known_book_path
                                             .file_name()
@@ -311,8 +324,8 @@ impl Worker {
 
                         match known_book_object {
                             Some(_book_obj) => {
-                                if let Some(blueprint_vec) =
-                                    &mut book_object.blueprint_book.blueprints
+                                if let Some(mut blueprint_vec) =
+                                    book_object.blueprint_book.blueprints.clone()
                                 {
                                     blueprint_vec.push(_book_obj);
                                 }
@@ -331,7 +344,7 @@ impl Worker {
                         match Worker::read_blueprint(&known_bp_path) {
                             Ok(_bp_obj) => {
                                 known_bp_object = Some(_bp_obj);
-                                prog_tracker.ok(ProgressType::Blueprint(
+                                prog_tracker.lock().unwrap().ok(ProgressType::Blueprint(
                                     known_bp_path
                                         .file_name()
                                         .unwrap()
@@ -342,7 +355,7 @@ impl Worker {
                             }
                             Err(err_msg) => {
                                 known_bp_object = None;
-                                prog_tracker.error(
+                                prog_tracker.lock().unwrap().error(
                                     ProgressType::Blueprint(
                                         known_bp_path
                                             .file_name()
@@ -358,8 +371,8 @@ impl Worker {
 
                         match known_bp_object {
                             Some(_bp_obj) => {
-                                if let Some(blueprint_vec) =
-                                    &mut book_object.blueprint_book.blueprints
+                                if let Some(mut blueprint_vec) =
+                                    book_object.blueprint_book.blueprints.clone()
                                 {
                                     blueprint_vec.push(_bp_obj);
                                 }
@@ -378,18 +391,21 @@ impl Worker {
                         match Worker::read_blueprint(&known_bp_path) {
                             Ok(_bp_obj) => {
                                 known_bp_object = Some(_bp_obj);
-                                prog_tracker.ok(ProgressType::UpgradePlanner(
-                                    known_bp_path
-                                        .file_name()
-                                        .unwrap()
-                                        .to_str()
-                                        .unwrap()
-                                        .to_string(),
-                                ))
+                                prog_tracker
+                                    .lock()
+                                    .unwrap()
+                                    .ok(ProgressType::UpgradePlanner(
+                                        known_bp_path
+                                            .file_name()
+                                            .unwrap()
+                                            .to_str()
+                                            .unwrap()
+                                            .to_string(),
+                                    ))
                             }
                             Err(err_msg) => {
                                 known_bp_object = None;
-                                prog_tracker.error(
+                                prog_tracker.lock().unwrap().error(
                                     ProgressType::UpgradePlanner(
                                         known_bp_path
                                             .file_name()
@@ -405,8 +421,8 @@ impl Worker {
 
                         match known_bp_object {
                             Some(_bp_obj) => {
-                                if let Some(blueprint_vec) =
-                                    &mut book_object.blueprint_book.blueprints
+                                if let Some(mut blueprint_vec) =
+                                    book_object.blueprint_book.blueprints.clone()
                                 {
                                     blueprint_vec.push(_bp_obj);
                                 }
@@ -425,7 +441,7 @@ impl Worker {
                         match Worker::read_blueprint(&known_bp_path) {
                             Ok(_bp_obj) => {
                                 known_bp_object = Some(_bp_obj);
-                                prog_tracker.ok(ProgressType::DeconPlanner(
+                                prog_tracker.lock().unwrap().ok(ProgressType::DeconPlanner(
                                     known_bp_path
                                         .file_name()
                                         .unwrap()
@@ -436,7 +452,7 @@ impl Worker {
                             }
                             Err(err_msg) => {
                                 known_bp_object = None;
-                                prog_tracker.error(
+                                prog_tracker.lock().unwrap().error(
                                     ProgressType::DeconPlanner(
                                         known_bp_path
                                             .file_name()
@@ -452,8 +468,8 @@ impl Worker {
 
                         match known_bp_object {
                             Some(_bp_obj) => {
-                                if let Some(blueprint_vec) =
-                                    &mut book_object.blueprint_book.blueprints
+                                if let Some(mut blueprint_vec) =
+                                    book_object.blueprint_book.blueprints.clone()
                                 {
                                     blueprint_vec.push(_bp_obj);
                                 }
@@ -461,7 +477,196 @@ impl Worker {
                             None => (),
                         }
                     }
-                }
+                });
+
+                // for unknown_blueprint in unknown_bps.iter() {
+                //     // book
+                //     if let Some(known_book) = &unknown_blueprint.blueprint_book {
+                //         let mut known_book_path = current_dir_path.clone();
+                //         known_book_path.push(&known_book.label);
+
+                //         let known_book_object: Option<Value>;
+                //         match Worker::read_book_recursive(prog_tracker, &known_book_path) {
+                //             Ok(_book_obj) => {
+                //                 known_book_object = Some(_book_obj);
+                //                 prog_tracker.ok(ProgressType::Book(
+                //                     known_book_path
+                //                         .file_name()
+                //                         .unwrap()
+                //                         .to_str()
+                //                         .unwrap()
+                //                         .to_string(),
+                //                 ))
+                //             }
+                //             Err(err_msg) => {
+                //                 known_book_object = None;
+                //                 prog_tracker.error(
+                //                     ProgressType::Book(
+                //                         known_book_path
+                //                             .file_name()
+                //                             .unwrap()
+                //                             .to_str()
+                //                             .unwrap()
+                //                             .to_string(),
+                //                     ),
+                //                     Some(err_msg),
+                //                 );
+                //             }
+                //         }
+
+                //         match known_book_object {
+                //             Some(_book_obj) => {
+                //                 if let Some(blueprint_vec) =
+                //                     &mut book_object.blueprint_book.blueprints
+                //                 {
+                //                     blueprint_vec.push(_book_obj);
+                //                 }
+                //             }
+                //             None => (),
+                //         }
+                //     }
+
+                //     // blueprint
+                //     if let Some(known_bp) = &unknown_blueprint.blueprint {
+                //         let mut known_bp_path = current_dir_path.clone();
+                //         known_bp_path.push(&known_bp.label);
+                //         known_bp_path.set_extension("json");
+
+                //         let known_bp_object: Option<Value>;
+                //         match Worker::read_blueprint(&known_bp_path) {
+                //             Ok(_bp_obj) => {
+                //                 known_bp_object = Some(_bp_obj);
+                //                 prog_tracker.ok(ProgressType::Blueprint(
+                //                     known_bp_path
+                //                         .file_name()
+                //                         .unwrap()
+                //                         .to_str()
+                //                         .unwrap()
+                //                         .to_string(),
+                //                 ))
+                //             }
+                //             Err(err_msg) => {
+                //                 known_bp_object = None;
+                //                 prog_tracker.error(
+                //                     ProgressType::Blueprint(
+                //                         known_bp_path
+                //                             .file_name()
+                //                             .unwrap()
+                //                             .to_str()
+                //                             .unwrap()
+                //                             .to_string(),
+                //                     ),
+                //                     Some(err_msg),
+                //                 )
+                //             }
+                //         }
+
+                //         match known_bp_object {
+                //             Some(_bp_obj) => {
+                //                 if let Some(blueprint_vec) =
+                //                     &mut book_object.blueprint_book.blueprints
+                //                 {
+                //                     blueprint_vec.push(_bp_obj);
+                //                 }
+                //             }
+                //             None => (),
+                //         }
+                //     }
+
+                //     // upgrade planner
+                //     if let Some(known_bp) = &unknown_blueprint.upgrade_planner {
+                //         let mut known_bp_path = current_dir_path.clone();
+                //         known_bp_path.push(&known_bp.label);
+                //         known_bp_path.set_extension("json");
+
+                //         let known_bp_object: Option<Value>;
+                //         match Worker::read_blueprint(&known_bp_path) {
+                //             Ok(_bp_obj) => {
+                //                 known_bp_object = Some(_bp_obj);
+                //                 prog_tracker.ok(ProgressType::UpgradePlanner(
+                //                     known_bp_path
+                //                         .file_name()
+                //                         .unwrap()
+                //                         .to_str()
+                //                         .unwrap()
+                //                         .to_string(),
+                //                 ))
+                //             }
+                //             Err(err_msg) => {
+                //                 known_bp_object = None;
+                //                 prog_tracker.error(
+                //                     ProgressType::UpgradePlanner(
+                //                         known_bp_path
+                //                             .file_name()
+                //                             .unwrap()
+                //                             .to_str()
+                //                             .unwrap()
+                //                             .to_string(),
+                //                     ),
+                //                     Some(err_msg),
+                //                 )
+                //             }
+                //         }
+
+                //         match known_bp_object {
+                //             Some(_bp_obj) => {
+                //                 if let Some(blueprint_vec) =
+                //                     &mut book_object.blueprint_book.blueprints
+                //                 {
+                //                     blueprint_vec.push(_bp_obj);
+                //                 }
+                //             }
+                //             None => (),
+                //         }
+                //     }
+
+                //     // decon planner
+                //     if let Some(known_bp) = &unknown_blueprint.deconstruction_planner {
+                //         let mut known_bp_path = current_dir_path.clone();
+                //         known_bp_path.push(&known_bp.label);
+                //         known_bp_path.set_extension("json");
+
+                //         let known_bp_object: Option<Value>;
+                //         match Worker::read_blueprint(&known_bp_path) {
+                //             Ok(_bp_obj) => {
+                //                 known_bp_object = Some(_bp_obj);
+                //                 prog_tracker.ok(ProgressType::DeconPlanner(
+                //                     known_bp_path
+                //                         .file_name()
+                //                         .unwrap()
+                //                         .to_str()
+                //                         .unwrap()
+                //                         .to_string(),
+                //                 ))
+                //             }
+                //             Err(err_msg) => {
+                //                 known_bp_object = None;
+                //                 prog_tracker.error(
+                //                     ProgressType::DeconPlanner(
+                //                         known_bp_path
+                //                             .file_name()
+                //                             .unwrap()
+                //                             .to_str()
+                //                             .unwrap()
+                //                             .to_string(),
+                //                     ),
+                //                     Some(err_msg),
+                //                 )
+                //             }
+                //         }
+
+                //         match known_bp_object {
+                //             Some(_bp_obj) => {
+                //                 if let Some(blueprint_vec) =
+                //                     &mut book_object.blueprint_book.blueprints
+                //                 {
+                //                     blueprint_vec.push(_bp_obj);
+                //                 }
+                //             }
+                //             None => (),
+                //         }
+                //     }
+                // }
             }
             None => (),
         }
