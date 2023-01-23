@@ -27,3 +27,4 @@ codegen-units = 1
 strip = "symbols"
 lto = true
 incremental = true
+panic = "abort"
