@@ -270,19 +270,23 @@ impl Worker {
             Err(_) => return Err("failed to read dotfile".to_string()),
         }
 
-        let mut book_object: exportable::BookDotFileRecursive;
+        let book_object: Mutex<exportable::BookDotFileRecursive>; // actual variable modified here
+        let book_object_dispatch: exportable::BookDotFileRecursive; // used for iterating only
 
-        match serde_json::from_str(dot_file_contents.as_ref()) {
-            Ok(_book) => book_object = _book,
+        match serde_json::from_str::<exportable::BookDotFileRecursive>(dot_file_contents.as_ref()) {
+            Ok(_book) => {
+                book_object = Mutex::new(_book.clone());
+                book_object_dispatch = _book;
+            }
             Err(_) => return Err("failed to deserialize contents".to_string()),
         }
 
-        book_object.blueprint_book.blueprints = Some(vec![]);
+        book_object.lock().unwrap().blueprint_book.blueprints = Some(vec![]);
 
         // println!("{:#?}", book_object);
 
         // iterate through the list of stored blueprints
-        match &book_object.blueprint_book.order {
+        match &book_object_dispatch.blueprint_book.order {
             Some(unknown_bps) => {
                 unknown_bps.par_iter().for_each(|unknown_blueprint| {
                     // book
@@ -324,8 +328,8 @@ impl Worker {
 
                         match known_book_object {
                             Some(_book_obj) => {
-                                if let Some(mut blueprint_vec) =
-                                    book_object.blueprint_book.blueprints.clone()
+                                if let Some(blueprint_vec) =
+                                    &mut book_object.lock().unwrap().blueprint_book.blueprints
                                 {
                                     blueprint_vec.push(_book_obj);
                                 }
@@ -371,8 +375,8 @@ impl Worker {
 
                         match known_bp_object {
                             Some(_bp_obj) => {
-                                if let Some(mut blueprint_vec) =
-                                    book_object.blueprint_book.blueprints.clone()
+                                if let Some(blueprint_vec) =
+                                    &mut book_object.lock().unwrap().blueprint_book.blueprints
                                 {
                                     blueprint_vec.push(_bp_obj);
                                 }
@@ -421,8 +425,8 @@ impl Worker {
 
                         match known_bp_object {
                             Some(_bp_obj) => {
-                                if let Some(mut blueprint_vec) =
-                                    book_object.blueprint_book.blueprints.clone()
+                                if let Some(blueprint_vec) =
+                                    &mut book_object.lock().unwrap().blueprint_book.blueprints
                                 {
                                     blueprint_vec.push(_bp_obj);
                                 }
@@ -468,8 +472,8 @@ impl Worker {
 
                         match known_bp_object {
                             Some(_bp_obj) => {
-                                if let Some(mut blueprint_vec) =
-                                    book_object.blueprint_book.blueprints.clone()
+                                if let Some(blueprint_vec) =
+                                    &mut book_object.lock().unwrap().blueprint_book.blueprints
                                 {
                                     blueprint_vec.push(_bp_obj);
                                 }
