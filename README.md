@@ -23,13 +23,10 @@ bp_dir/
 
 ---
 
-## Limitations
+## Modifications to your blueprints
+fbpconvert may modify your blueprint:
 
-There are, however, some limitations of this tool.
-
-- Blueprints/Books must adhere to [file naming conventions](http://www.linfo.org/file_name.html). So slashes and other special characters cannot be used.
-
-- Blueprint book information is stored in a JSON dotfile that matches the name of its parent directory. So avoid naming blueprints starting with a dot.
+- Due to the need to comply with [file naming conventions](http://www.linfo.org/file_name.html), blueprint/book names that contain special characters will have these characters replaced.
 
 ---
 
@@ -43,7 +40,7 @@ cd <path_to_git_repo>
 cargo b --release
 ```
 
-Alternatively, download a release instead
+Alternatively, [download a release instead](https://github.com/cruzerngz/fbpconvert/releases/latest)
 
 ---
 

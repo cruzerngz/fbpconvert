@@ -12,7 +12,7 @@ serde_json = {version = "1.0.91", features = ["preserve_order"]}
 base64 = "0.21.0"
 inflate = "0.4.5"
 deflate = "1.0.0"
-clap = {version = "4.1.1", features = ["derive"]}
+clap = {version = "3.2.23", features = ["derive"]}
 clap_complete = "4.1.0"
 crossterm = "0.25.0"
 copypasta = "0.8.1"
@@ -22,7 +22,7 @@ rayon = "1.6.1"
 incremental = true
 
 [profile.release]
-opt-level = "s"
+opt-level = 3
 codegen-units = 1
 strip = "symbols"
 lto = true
