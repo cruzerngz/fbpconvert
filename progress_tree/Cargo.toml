@@ -1,0 +1,21 @@
+[package]
+name = "progress_tree"
+description = "A visualiser for progress on tree-like data structures"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+crossterm = "0.25.0"
+
+[profile.dev]
+incremental = true
+
+[profile.release]
+opt-level = 3
+codegen-units = 1
+strip = "symbols"
+lto = true
+incremental = true
+# panic = "abort"
