@@ -18,7 +18,7 @@ pub mod fragments {
     use super::*;
 
     /// Blueprint parameters except arrays
-    #[derive(Serialize, Deserialize, Debug)]
+    #[derive(Serialize, Deserialize, Debug, Clone)]
     pub struct Blueprint {
         #[serde(skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
@@ -32,7 +32,7 @@ pub mod fragments {
     }
 
     /// Blueprint book
-    #[derive(Serialize, Deserialize, Debug)]
+    #[derive(Serialize, Deserialize, Debug, Clone)]
     pub struct Book {
         #[serde(skip_serializing_if = "Option::is_none")]
         pub description: Option<String>,
@@ -47,7 +47,7 @@ pub mod fragments {
     }
 
     /// Con / Des planners
-    #[derive(Serialize, Deserialize, Debug)]
+    #[derive(Serialize, Deserialize, Debug, Clone)]
     pub struct Planner {
         pub label: String,
     }
@@ -59,7 +59,7 @@ pub mod importable {
     use super::*;
 
     /// Head of the blueprint book
-    #[derive(Serialize, Deserialize, Debug)]
+    #[derive(Serialize, Deserialize, Debug, Clone)]
     pub struct BookHead {
         //used in import
         pub blueprint_book: Book,
@@ -69,7 +69,7 @@ pub mod importable {
     }
 
     /// Head of blueprint, to factorio spec
-    #[derive(Serialize, Deserialize, Debug)]
+    #[derive(Serialize, Deserialize, Debug, Clone)]
     pub struct BlueprintHead {
         // used in import
         pub blueprint: Blueprint,
@@ -78,7 +78,7 @@ pub mod importable {
         pub index: Option<u16>,
     }
 
-    #[derive(Serialize, Deserialize, Debug)]
+    #[derive(Serialize, Deserialize, Debug, Clone)]
     pub struct UpgradeHead {
         pub upgrade_planner: Planner,
 
@@ -86,7 +86,7 @@ pub mod importable {
         pub index: Option<u16>,
     }
 
-    #[derive(Serialize, Deserialize, Debug)]
+    #[derive(Serialize, Deserialize, Debug, Clone)]
     pub struct DeconHead {
         pub deconstruction_planner: Planner,
 
@@ -101,7 +101,7 @@ pub mod exportable {
     use super::*;
     pub use importable::BlueprintHead as Blueprint;
 
-    #[derive(Serialize, Deserialize, Debug)]
+    #[derive(Serialize, Deserialize, Debug, Clone)]
     pub struct BookDotFileRecursive {
         //used in export
         pub blueprint_book: BookDotFile,
@@ -112,7 +112,7 @@ pub mod exportable {
 }
 
 /// Blueprint book with additional parameter containing the order of it's child blueprints
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Book {
     // used internally
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -137,7 +137,7 @@ pub struct Book {
     pub order: Option<Vec<UnknownBlueprintType>>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct BookDotFile {
     //used internally
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -162,7 +162,7 @@ pub struct BookDotFile {
     pub order: Option<Vec<UnknownBlueprintType>>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Blueprint {
     //used internally
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -203,7 +203,7 @@ pub struct Blueprint {
 
 /// Factorio's deconstruction planner / construction planner
 /// both use the same top-level data structure
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Planner {
     pub settings: serde_json::Value,
 
@@ -214,7 +214,7 @@ pub struct Planner {
     pub version: u64,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Color {
     //used internally
     pub r: f32,
@@ -224,13 +224,13 @@ pub struct Color {
 }
 
 /// Coordinates for blueprints that have snap to grid
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GridSnap {
     pub x: u32,
     pub y: u32,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct UnknownBlueprintType {
     //used in common
     #[serde(skip_serializing_if = "Option::is_none")]
