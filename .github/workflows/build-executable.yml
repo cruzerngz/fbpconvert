@@ -1,10 +1,10 @@
 name: build-executables
 
 on:
-  push:
-    branches:
+  # push:
+    # branches:
       # - "main"
-      - "devel"
+      # - "devel"
   pull_request:
     branches: [ "main" ]
 
@@ -42,4 +42,3 @@ jobs:
       with:
         name: fbpconvert.exe
         path: ./target/x86_64-pc-windows-gnu/release/fbpconvert.exe
-
