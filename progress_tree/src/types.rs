@@ -6,6 +6,7 @@ pub use node_type::{NodeType, TreeBranch, TreeNode};
 // #![allow(unused)]
 
 use std::{
+    collections::HashSet,
     ops::Deref,
     sync::{Arc, RwLock},
 };
@@ -34,10 +35,10 @@ impl RwArc<TreeBranch> {
         match &mut node {
             NodeType::Branch(_branch) => {
                 _branch.write().unwrap().parent = Some(self.clone());
-            },
+            }
             NodeType::Node(_node) => {
                 _node.parent = Some(self.clone());
-            },
+            }
         }
 
         let mut _pointer = self.write().unwrap();
@@ -88,6 +89,11 @@ trait NumLines {
     fn num_lines(&self) -> usize;
 }
 
+trait TreeError {
+    /// Mark a node with an error
+    fn error<T: ToString>(&mut self, err_message: Option<T>);
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
@@ -119,7 +125,7 @@ mod test {
 
             let second_branch = RwArc::new(TreeBranch::new("second branch"));
             let mut sub_node = TreeNode::default();
-            sub_node.error_message = Some("some error".to_string());
+            sub_node.error(Some("some_message"));
 
             second_branch.insert(NodeType::Node(sub_node));
             root.insert(NodeType::Branch(second_branch));
@@ -135,13 +141,13 @@ mod test {
             assert_eq!(root.read().unwrap().total_lines(), 5);
 
             let first_node: TreeNode = {
-                root.read().unwrap().children
+                root.read()
+                    .unwrap()
+                    .children
                     .iter()
-                    .find_map(|(_, _node)| {
-                        match _node {
-                            NodeType::Branch(_b) => None,
-                            NodeType::Node(_n) => Some(_n.to_owned()),
-                        }
+                    .find_map(|(_, _node)| match _node {
+                        NodeType::Branch(_b) => None,
+                        NodeType::Node(_n) => Some(_n.to_owned()),
                     })
                     .unwrap()
             };
@@ -153,26 +159,27 @@ mod test {
             );
 
             let last_branch = {
-                root.read().unwrap().children
+                root.read()
+                    .unwrap()
+                    .children
                     .iter()
                     .rev()
-                    .find_map(|(_, _node)| {
-                        match _node {
-                            NodeType::Branch(_b) => Some(_b.clone()),
-                            NodeType::Node(_n) => None,
-                        }
+                    .find_map(|(_, _node)| match _node {
+                        NodeType::Branch(_b) => Some(_b.clone()),
+                        NodeType::Node(_n) => None,
                     })
                     .unwrap()
             };
 
             let first_sub_node_error: TreeNode = {
-                last_branch.read().unwrap().children
+                last_branch
+                    .read()
+                    .unwrap()
+                    .children
                     .iter()
-                    .find_map(|(_, _node)| {
-                        match _node {
-                            NodeType::Branch(_) => None,
-                            NodeType::Node(_n) => Some(_n.to_owned()),
-                        }
+                    .find_map(|(_, _node)| match _node {
+                        NodeType::Branch(_) => None,
+                        NodeType::Node(_n) => Some(_n.to_owned()),
                     })
                     .unwrap()
             };
@@ -180,8 +187,6 @@ mod test {
             assert_eq!(last_branch.read().unwrap().num_lines(), 3);
             assert!(matches!(first_sub_node_error.error_message, Some(_)));
             assert_eq!(first_sub_node_error.num_lines(), 4);
-
-
         }
 
         #[test]

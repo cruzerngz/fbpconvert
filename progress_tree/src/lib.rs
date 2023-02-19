@@ -4,29 +4,20 @@
 //!
 
 pub mod tracker;
-mod tree_blocks;
 pub mod types;
 
-pub fn add(left: usize, right: usize) -> usize {
-    left + right
-}
+mod tree_blocks;
 
 #[cfg(test)]
+#[allow(unused)]
 mod tests {
     use super::*;
     use std::io::stdout;
     use std::io::{Read, Write};
-    use std::thread::sleep_ms;
     use std::time::Duration;
 
     use crossterm::style::Stylize;
     use crossterm::{cursor, execute, terminal, ExecutableCommand, QueueableCommand};
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
 
     /// # Prototype documentation
     /// Let's say that the progress tracker is a type.
@@ -48,7 +39,7 @@ mod tests {
         let size: Vec<u32> = vec![0, 1, 2, 3];
     }
 
-    #[test]
+    // #[test]
     fn trying_out_crossterm_features() {
         let mut std_out = stdout();
 

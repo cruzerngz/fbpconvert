@@ -4,7 +4,7 @@ mod tree_node;
 pub use tree_branch::TreeBranch;
 pub use tree_node::TreeNode;
 
-use crate::types::{NumLines, ProgressDisplayVariant, RwArc, TotalLines};
+use crate::types::{NumLines, ProgressDisplayVariant, RwArc, TotalLines, TreeError};
 
 /// Type of node in the blueprint tree.
 #[derive(Clone, Debug)]
@@ -34,6 +34,15 @@ impl NumLines for NodeType {
         match self {
             NodeType::Branch(_b) => _b.read().unwrap().num_lines(),
             NodeType::Node(_n) => _n.num_lines(),
+        }
+    }
+}
+
+impl TreeError for NodeType {
+    fn error<T: ToString>(&mut self, err_message: Option<T>) {
+        match self {
+            NodeType::Branch(_b) => _b.write().unwrap().error(err_message),
+            NodeType::Node(_n) => _n.error(err_message),
         }
     }
 }
@@ -77,20 +86,14 @@ impl NodeType {
     }
 
     /// Update the node with the program's status.
-    pub fn update(&mut self, status: ProgressDisplayVariant, error_msg: Option<String>) {
+    pub fn update(&mut self, status: ProgressDisplayVariant) {
         match self {
             NodeType::Branch(_b) => {
                 let mut _b_write = _b.write().unwrap();
                 _b_write.progress = status;
-                if let Some(_err) = &error_msg {
-                    _b_write.error_message = error_msg
-                }
             }
             NodeType::Node(_n) => {
                 _n.progress = status;
-                if let Some(_err) = &error_msg {
-                    _n.error_message = error_msg
-                }
             }
         }
     }

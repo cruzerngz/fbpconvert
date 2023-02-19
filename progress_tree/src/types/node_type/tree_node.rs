@@ -1,4 +1,6 @@
-use crate::types::{ProgressDisplayVariant, RwArc, TotalLines, NumLines};
+use std::collections::HashSet;
+
+use crate::types::{NumLines, ProgressDisplayVariant, RwArc, TotalLines, TreeError};
 
 use crate::types::node_type::TreeBranch;
 
@@ -34,15 +36,14 @@ impl NumLines for TreeNode {
                         if self.name == _n.name {
                             lines += self.total_lines();
                             break;
-                        }
-                        else {
+                        } else {
                             lines += _n.total_lines();
                         }
                     }
                 }
 
                 lines
-            },
+            }
             None => self.total_lines(),
         }
     }
@@ -55,5 +56,28 @@ impl TotalLines for TreeNode {
         } else {
             0
         }
+    }
+}
+
+impl TreeError for TreeNode {
+    fn error<T: ToString>(&mut self, err_message: Option<T>) {
+        self.progress = ProgressDisplayVariant::Error;
+        self.error_message = {
+            if let Some(_message) = err_message {
+                Some(_message.to_string())
+            } else {
+                None
+            }
+        };
+    }
+}
+
+impl TreeNode {
+    /// Create a new node.
+    pub fn new<T: ToString>(name: T) -> TreeNode {
+        let mut _node = Self::default();
+        _node.name = name.to_string();
+
+        _node
     }
 }

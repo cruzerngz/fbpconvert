@@ -1,6 +1,6 @@
-use std::collections::{BTreeMap, HashSet};
+use std::collections::BTreeMap;
 
-use crate::types::{NodeType, NumLines, ProgressDisplayVariant, RwArc, TotalLines};
+use crate::types::{NodeType, NumLines, ProgressDisplayVariant, RwArc, TotalLines, TreeError};
 
 /// A branch in the tree.
 #[derive(Clone, Debug, Default)]
@@ -20,9 +20,6 @@ pub struct TreeBranch {
 
     /// Ordered map of children
     pub children: BTreeMap<String, NodeType>,
-
-    /// A set that contains the names of any invalid children
-    err_children: Option<HashSet<String>>,
 
     /// Reference to parent branch, if any.
     pub parent: Option<RwArc<TreeBranch>>,
@@ -70,6 +67,19 @@ impl NumLines for TreeBranch {
     }
 }
 
+impl TreeError for TreeBranch {
+    fn error<T: ToString>(&mut self, err_message: Option<T>) {
+        self.progress = ProgressDisplayVariant::Error;
+        self.error_message = {
+            if let Some(_message) = err_message {
+                Some(_message.to_string())
+            } else {
+                None
+            }
+        };
+    }
+}
+
 impl TreeBranch {
     /// Create a new instance of TreeBranch
     pub fn new<T>(name: T) -> Self
@@ -105,18 +115,22 @@ impl TreeBranch {
     /// Returns the percentage of immediate children that have completed conversion.
     pub fn percentage_completion(&self) -> f32 {
         let total = self.num_children();
-        let mut complete = 0;
+        let error = self.error_iter().count();
 
-        for _node in self.children.values() {
-            match _node.status() {
-                ProgressDisplayVariant::Complete => complete += 1,
-                _ => (),
-            }
-        }
-
-        (complete / total) as f32
+        1_f32 - (error / total) as f32
     }
 
+    /// Returns an iterator over any child nodes that contain an error.
+    pub fn error_iter(&self) -> impl Iterator<Item = (&String, &NodeType)> {
+        self.children.iter().filter(|(_, _node)| match _node {
+            NodeType::Branch(_b) => {
+                matches!(_b.read().unwrap().progress, ProgressDisplayVariant::Error)
+            }
+            NodeType::Node(_n) => matches!(_n.progress, ProgressDisplayVariant::Error),
+        })
+    }
+
+    #[cfg(notset)]
     /// Shows the tree, at a specified indentation
     fn show_tree(&self, indent: usize) {
         println!("{}{}", "  ".repeat(indent), self.name);
@@ -139,5 +153,52 @@ impl TreeBranch {
 
             _parent_pointer.back_propogate(change);
         }
+    }
+}
+
+#[cfg(test)]
+#[allow(unused)]
+mod test {
+
+    use super::TreeBranch;
+    use crate::types::{
+        NodeType, NumLines, ProgressDisplayVariant, RwArc, TotalLines, TreeError, TreeNode,
+    };
+
+    /// Creates a tree containing 10 children.
+    /// Children inserted in even-numbered intervals are marked with an error.
+    /// The other children are initialised to the default progress state.
+    fn create_known_tree() -> RwArc<TreeBranch> {
+        let root = RwArc::new(TreeBranch::new("root"));
+
+        let children: Vec<TreeNode> = {
+            let _iter = (0..10).into_iter().map(|num| {
+                let mut _node = TreeNode::new(format!("node number {num}"));
+
+                if num % 2 == 0 {
+                    _node.error(Some(format!("node {num} error")))
+                }
+
+                _node
+            });
+
+            _iter.collect()
+        };
+
+        for child in children.into_iter() {
+            root.insert(NodeType::Node(child))
+        }
+
+        root
+    }
+
+    #[test]
+    /// Test the error_iter() method
+    fn error_iter_test() {
+        let tree = create_known_tree();
+
+        assert_eq!(tree.read().unwrap().num_children(), 10);
+        assert_eq!(tree.read().unwrap().error_iter().count(), 5);
+        assert_eq!(tree.read().unwrap().total_lines(), 6);
     }
 }
