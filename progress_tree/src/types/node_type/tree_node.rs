@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::fmt::Display;
 
 use crate::types::{NumLines, ProgressDisplayVariant, RwArc, TotalLines, TreeError};
 
@@ -69,6 +69,20 @@ impl TreeError for TreeNode {
                 None
             }
         };
+    }
+}
+
+impl Display for TreeNode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let line = {
+            if let Some(_err) = &self.error_message {
+                format!("{}{}", self.name, _err)
+            } else {
+                self.name.clone()
+            }
+        };
+
+        write!(f, "{line}")
     }
 }
 

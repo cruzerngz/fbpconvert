@@ -53,8 +53,7 @@ impl NodeType {
     where
         T: ToString,
     {
-        let mut _branch = TreeBranch::default();
-        _branch.name = branch_name.to_string();
+        let mut _branch = TreeBranch::new(branch_name);
 
         NodeType::Branch(RwArc::new(_branch))
     }
@@ -64,8 +63,7 @@ impl NodeType {
     where
         T: ToString,
     {
-        let mut _node = TreeNode::default();
-        _node.name = node_name.to_string();
+        let mut _node = TreeNode::new(node_name);
 
         NodeType::Node(_node)
     }

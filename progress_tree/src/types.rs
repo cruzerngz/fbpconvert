@@ -6,7 +6,6 @@ pub use node_type::{NodeType, TreeBranch, TreeNode};
 // #![allow(unused)]
 
 use std::{
-    collections::HashSet,
     ops::Deref,
     sync::{Arc, RwLock},
 };
@@ -72,11 +71,13 @@ impl Default for ProgressDisplayVariant {
 trait TotalLines {
     /// Return the number of lines occupied in the command line
     /// by a node and all of its children (if any).
-    /// This is used to by crossterm to figure out how many lines to skip when adding/deleting lines.
+    /// This is used to figure out how to construct the progress tree.
     ///
     /// Branches occupy one line.
     ///
     /// Nodes (leaves) do not take up any space unless they contain an error message.
+    ///
+    /// Child nodes that are marked as complete do not occupy any space.
     fn total_lines(&self) -> usize;
 }
 
@@ -124,7 +125,7 @@ mod test {
             root.insert(NodeType::new_node("first node"));
 
             let second_branch = RwArc::new(TreeBranch::new("second branch"));
-            let mut sub_node = TreeNode::default();
+            let mut sub_node = TreeNode::new("sub node");
             sub_node.error(Some("some_message"));
 
             second_branch.insert(NodeType::Node(sub_node));
@@ -215,6 +216,21 @@ mod test {
                 1,
                 "num lines to first branch."
             );
+        }
+
+        #[test]
+        fn num_lines_test_2() {
+            let root = create_known_tree();
+
+            println!("{}", root.read().unwrap());
+
+            // let mut lock = root.write().unwrap();
+            for item in root.write().unwrap().incomplete_iter_mut() {
+                item.update(ProgressDisplayVariant::Complete);
+            }
+
+            println!("{}", root.read().unwrap());
+            println!("Num lines for completed children: {}", root.read().unwrap().total_lines());
         }
     }
 }

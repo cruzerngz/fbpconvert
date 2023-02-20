@@ -1,6 +1,6 @@
 //! This library crate provides an easy to comprehend visual
-//! on the unpacking/repacking of blueprints. It is an attempt
-//! to imitate the unix `tree` command.
+//! on the unpacking/repacking of blueprints. It attempts to
+//! visually imitate the unix `tree` command.
 //!
 
 pub mod tracker;

@@ -384,6 +384,10 @@ impl Worker {
         bp_book_dir: &PathBuf,
     ) -> Result<(), String> {
         // local_book_copy contains dotfile information
+        prog_tracker
+            .lock()
+            .unwrap()
+            .error_additional(format!("directory: {:?}", &bp_book_dir));
         let mut book_dot_file: importable::BookHead;
         match serde_json::from_value(bp_book.clone()) {
             Ok(_val) => book_dot_file = _val,
