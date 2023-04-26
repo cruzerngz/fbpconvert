@@ -1,16 +1,19 @@
-use std::fs;
-use std::path::PathBuf;
-use std::process::exit;
-use std::sync::{Arc, Mutex};
+use std::{
+    fs,
+    path::PathBuf,
+    process::exit,
+    sync::{Arc, Mutex},
+};
 
 use copypasta::{self, ClipboardContext, ClipboardProvider};
 use rayon::prelude::*;
 use serde_json::Value;
 
-use crate::args;
-use crate::common;
-use crate::factorio_structs::{self, exportable};
-use crate::progress::{self, ProgressType};
+use crate::{
+    args, common,
+    factorio_structs::{self, exportable},
+    progress::{self, ProgressType},
+};
 
 /// Prefix for exported blueprints
 const PREFIX_OUT: &str = "fbpconvert-bp_";
@@ -194,7 +197,8 @@ impl Worker {
                                 // if not the clipboard contents are not copied over
                                 std::thread::sleep(std::time::Duration::from_millis(100));
                                 // progress::Tracker::pause(
-                                //     format!("Blueprint copied into clipboard. Paste the string before exiting."))
+                                //     format!("Blueprint copied into clipboard.
+                                // Paste the string before exiting."))
                             }
                             Err(_) => progress_tracker.lock().unwrap().error_additional(
                                 "failed to copy blueprint string to clipboard".to_string(),
@@ -214,7 +218,8 @@ impl Worker {
 
     /// Returns the complete blueprint JSON, given a file name.
     /// Returns an error message if an error occurs.
-    /// This returns a generic Value data structure, so all types (books, planners) can be read through.
+    /// This returns a generic Value data structure, so all types (books,
+    /// planners) can be read through.
     fn read_blueprint(bp_file_path: &PathBuf) -> Result<Value, String> {
         if !bp_file_path.is_file() {
             // println!("{:?}", bp_file_path);

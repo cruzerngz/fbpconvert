@@ -1,18 +1,22 @@
-use std::fs;
-use std::fs::File;
-use std::io::Write;
-use std::path::PathBuf;
-use std::process::exit;
-use std::sync::{Arc, Mutex};
+use std::{
+    fs,
+    fs::File,
+    io::Write,
+    path::PathBuf,
+    process::exit,
+    sync::{Arc, Mutex},
+};
 
 use copypasta::{self, ClipboardContext, ClipboardProvider};
+use factorio_structs::importable;
 use rayon::prelude::*;
 
-use crate::args;
-use crate::common::BlueprintType;
-use crate::progress::{self, ProgressType};
-use crate::{common, factorio_structs};
-use factorio_structs::importable;
+use crate::{
+    args, common,
+    common::BlueprintType,
+    factorio_structs,
+    progress::{self, ProgressType},
+};
 
 pub struct Worker {
     pub import_type: args::ImportSubCommands,
@@ -376,8 +380,8 @@ impl Worker {
         }
     }
 
-    /// Recursively writes the book and its contents to file, given a known starting dir
-    /// Returns an error message if an error is encountered
+    /// Recursively writes the book and its contents to file, given a known
+    /// starting dir Returns an error message if an error is encountered
     fn recursive_book_write(
         prog_tracker: &mut Arc<Mutex<progress::Tracker>>,
         bp_book: &serde_json::Value,

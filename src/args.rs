@@ -1,6 +1,6 @@
 use clap::Parser;
-// use clap_complete::{self, generate, Generator, Shell};
 
+// use clap_complete::{self, generate, Generator, Shell};
 pub use self::commands::*;
 
 #[derive(Parser, Debug)]
@@ -70,7 +70,8 @@ pub mod commands {
         #[clap(short, long)]
         pub destination: Option<String>,
 
-        /// Inflate blueprint string only. Writes contents to file as "inflated.json".
+        /// Inflate blueprint string only. Writes contents to file as
+        /// "inflated.json".
         #[cfg(debug_assertions)]
         #[clap(long)]
         pub inflate_only: bool,
@@ -94,7 +95,8 @@ pub mod commands {
         #[clap(short, long)]
         pub destination: Option<String>,
 
-        /// Inflate blueprint string only. Writes contents to file as "inflated.json".
+        /// Inflate blueprint string only. Writes contents to file as
+        /// "inflated.json".
         #[cfg(debug_assertions)]
         #[clap(long)]
         pub inflate_only: bool,

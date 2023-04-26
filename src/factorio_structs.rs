@@ -13,7 +13,8 @@ pub const FACTORIO_BP_KEY: &str = "blueprint";
 pub const FACTORIO_UP_PLANNER_KEY: &str = "upgrade_planner";
 pub const FACTORIO_DECON_PLANNER_KEY: &str = "deconstruction_planner";
 
-/// Structs defined here have a subset of attributes of their factorio equivalents.
+/// Structs defined here have a subset of attributes of their factorio
+/// equivalents.
 pub mod fragments {
     use super::*;
 
@@ -98,8 +99,9 @@ pub mod importable {
 /// Structs that are valid for use in export only.
 /// Exporting is converting a directory or a JSON file to a blueprint string.
 pub mod exportable {
-    use super::*;
     pub use importable::BlueprintHead as Blueprint;
+
+    use super::*;
 
     #[derive(Serialize, Deserialize, Debug, Clone)]
     pub struct BookDotFileRecursive {
@@ -111,7 +113,8 @@ pub mod exportable {
     }
 }
 
-/// Blueprint book with additional parameter containing the order of it's child blueprints
+/// Blueprint book with additional parameter containing the order of it's child
+/// blueprints
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Book {
     // used internally

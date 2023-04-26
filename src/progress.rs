@@ -1,11 +1,12 @@
 //! This module handles writing progress to stdout
 #![allow(unused)]
 
-use std::io::{Read, Write};
-use std::sync::{Arc, Mutex};
+use std::{
+    io::{Read, Write},
+    sync::{Arc, Mutex},
+};
 
-use crossterm::style::Stylize;
-use crossterm::{cursor, terminal, ExecutableCommand, QueueableCommand};
+use crossterm::{cursor, style::Stylize, terminal, ExecutableCommand, QueueableCommand};
 
 /// Type of blueprint: take from common module
 pub use crate::common::BlueprintType as ProgressType;
@@ -218,9 +219,11 @@ impl Tracker {
 
 #[cfg(test)]
 mod test {
-    use super::*;
     use std::{thread, time};
+
     use ProgressType::*;
+
+    use super::*;
 
     #[test]
     fn progress_loop() {

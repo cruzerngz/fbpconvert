@@ -16,7 +16,8 @@ pub enum BlueprintType {
 }
 
 impl BlueprintType {
-    /// Determines the blueprint type, returning an enum with the enclosing blueprint's name
+    /// Determines the blueprint type, returning an enum with the enclosing
+    /// blueprint's name
     pub fn classify(given_bp: &Value) -> BlueprintType {
         let unknown_bp_type: factorio_structs::UnknownBlueprintType;
         match serde_json::from_value(given_bp.clone()) {
@@ -107,8 +108,9 @@ pub fn file_rename(file_name: String) -> String {
 
 #[cfg(test)]
 mod test {
-    use super::*;
     use serde_json::json;
+
+    use super::*;
 
     #[test]
     fn test_classify_invalid_empty() {
