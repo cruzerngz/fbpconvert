@@ -226,8 +226,8 @@ pub struct Color {
 /// Coordinates for blueprints that have snap to grid
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct GridSnap {
-    pub x: u32,
-    pub y: u32,
+    pub x: i32,
+    pub y: i32,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]

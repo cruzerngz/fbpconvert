@@ -25,27 +25,5 @@ impl Execute for MainCliArgs {
 fn main() {
     let main_args = MainCliArgs::parse();
 
-    // if let Some(_gen) = main_args.generator {
-    //     let cmd = MainCliArgs::command();
-    //     println!("generating completion file: {_gen:?}");
-    //     println!("{cmd:?}");
-    // } else {
-    //     println!("{main_args:#?}");
-    // }
-
     main_args.execute()
-
-    // old
-    //
-    // match &main_args.command {
-    //     MainSubCommands::Import(_cmd_type) => {
-    //         let import_worker = import::Worker::from(_cmd_type);
-    //         import_worker.exec();
-    //     }
-
-    //     MainSubCommands::Export(_cmd_type) => {
-    //         let export_worker = export::Worker::from(_cmd_type);
-    //         export_worker.exec();
-    //     }
-    // }
 }

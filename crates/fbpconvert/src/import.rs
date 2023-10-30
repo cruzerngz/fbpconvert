@@ -74,7 +74,7 @@ impl Execute for ImportSubCommands {
         }
 
         #[cfg(not(debug_assertions))]
-        match &self.import_type {
+        match &self {
             args::ImportSubCommands::File(_file) => {
                 match fs::read_to_string(&_file.infile.clone().unwrap()) {
                     Ok(_str) => blueprint_string = _str,
@@ -217,7 +217,6 @@ impl Execute for ImportSubCommands {
     }
 }
 
-
 /// Writes a blueprint to file given the file path and blueprint object
 /// Returns an error message if encountered
 fn blueprint_write(blueprint: &serde_json::Value, dir_path: &PathBuf) -> Result<(), String> {
@@ -233,7 +232,10 @@ fn blueprint_write(blueprint: &serde_json::Value, dir_path: &PathBuf) -> Result<
     let mut blueprint_compliant: importable::BlueprintHead;
     match serde_json::from_value(blueprint.to_owned()) {
         Ok(result) => blueprint_compliant = result,
-        Err(_) => return Err("Error deserializing to compliant blueprint".to_string()),
+        Err(_e) => {
+            println!("error: {:?}", _e);
+            return Err("Error deserializing to compliant blueprint".to_string());
+        }
     }
 
     bp_name = common::file_rename(bp_name);
