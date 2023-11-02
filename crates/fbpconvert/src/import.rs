@@ -8,11 +8,10 @@ use std::sync::{Arc, Mutex};
 use copypasta::{self, ClipboardContext, ClipboardProvider};
 use rayon::prelude::*;
 
-use crate::args::ImportSubCommands;
+use crate::args::{self, ImportSubCommands};
 use crate::common::BlueprintType;
 use crate::progress::{self, ProgressType};
-use crate::{args, Execute};
-use crate::{common, factorio_structs};
+use crate::{common, factorio_structs, Execute};
 use factorio_structs::importable;
 
 impl Execute for ImportSubCommands {
