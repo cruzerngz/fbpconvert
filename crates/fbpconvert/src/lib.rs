@@ -22,15 +22,21 @@ impl Execute for MainCliArgs {
             MainSubCommands::Completions(complete) => {
                 let mut app: clap::Command = MainCliArgs::command();
                 let mut fd = std::io::stdout();
-                let bin = self.bin_name.unwrap();
 
+                let bin = match self.bin_name {
+                    Some(b) => b,
+                    None => {
+                        println!("Executable name not found. Is this running as a library?");
+                        std::process::exit(-1)
+                    }
+                };
+
+                #[rustfmt::skip]
                 match complete.completions {
                     args::ShellCli::Bash => generate(shells::Bash, &mut app, bin, &mut fd),
                     args::ShellCli::Zsh => generate(shells::Zsh, &mut app, bin, &mut fd),
                     args::ShellCli::Fish => generate(shells::Fish, &mut app, bin, &mut fd),
-                    args::ShellCli::PowerShell => {
-                        generate(shells::PowerShell, &mut app, bin, &mut fd)
-                    }
+                    args::ShellCli::PowerShell => generate(shells::PowerShell, &mut app, bin, &mut fd),
                     args::ShellCli::Elvish => generate(shells::Elvish, &mut app, bin, &mut fd),
                 };
             }

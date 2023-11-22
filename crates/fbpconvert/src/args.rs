@@ -11,10 +11,6 @@ pub struct MainCliArgs {
     /// Show what the program is doing
     #[clap(short, long)]
     pub verbose: bool,
-    // // Outputs the completion file for a given shell
-    // #[arg(value_enum)]
-    // #[clap(short, long)]
-    // pub generator: Option<Shell>,
 
     #[clap(skip)]
     pub bin_name: Option<&'static str>
@@ -66,7 +62,6 @@ pub enum ExportSubCommands {
 pub struct Completions {
     /// Generate a SHELL completion script and print to stdout
     #[clap(value_parser, value_name = "SHELL")]
-    // #[clap(arg_required_else_help = true)]
     pub completions: ShellCli,
 }
 
