@@ -1,5 +1,4 @@
-use clap::Parser;
-// use clap_complete::{self, generate, Generator, Shell};
+use clap::{Parser, ValueEnum};
 
 pub use self::commands::*;
 
@@ -16,6 +15,9 @@ pub struct MainCliArgs {
     // #[arg(value_enum)]
     // #[clap(short, long)]
     // pub generator: Option<Shell>,
+
+    #[clap(skip)]
+    pub bin_name: Option<&'static str>
 }
 
 /// This enum contains the various subcommands available
@@ -30,6 +32,10 @@ pub enum MainSubCommands {
     #[clap(arg_required_else_help = true)]
     #[clap(subcommand)]
     Export(ExportSubCommands),
+
+    /// Generate shell completions for your shell
+    #[clap(arg_required_else_help = true)]
+    Completions(Completions),
 }
 
 #[derive(Parser, Debug, Clone)]
@@ -54,6 +60,24 @@ pub enum ExportSubCommands {
     /// Export blueprint strings to the clipboard
     #[clap(arg_required_else_help = true)]
     Clipboard(ExportClipboard),
+}
+
+#[derive(Parser, Debug, Clone)]
+pub struct Completions {
+    /// Generate a SHELL completion script and print to stdout
+    #[clap(value_parser, value_name = "SHELL")]
+    // #[clap(arg_required_else_help = true)]
+    pub completions: ShellCli,
+}
+
+/// Should have the same variants as [clap_complete::Shell]
+#[derive(ValueEnum, Debug, Copy, Clone)]
+pub enum ShellCli {
+    Bash,
+    Zsh,
+    Fish,
+    PowerShell,
+    Elvish,
 }
 
 /// Contains CLI flags/arguments for various commands/subcommands
