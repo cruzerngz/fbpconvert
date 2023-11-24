@@ -60,4 +60,29 @@ Run `fbpconvert help` for more information
 
 `fbpconvert export file` : export a blueprint string to a file
 
+### Generate shell completions
+```bash
+# Bash
+fbpconvert completions bash > ~/.local/share/bash-completion/completions/rustup
+
+# Bash (macOS/Homebrew)
+fbpconvert completions bash > $(brew --prefix)/etc/bash_completion.d/rustup.bash-completion
+
+# Fish
+$ mkdir -p ~/.config/fish/completions
+fbpconvert completions fish > ~/.config/fish/completions/rustup.fish
+
+# Zsh
+fbpconvert completions zsh > ~/.zfunc/_rustup
+
+# PowerShell v5.0+
+fbpconvert completions powershell >> $PROFILE.CurrentUserCurrentHost
+```
+
+For `zsh`, you must then add the following line in your `~/.zshrc` before `compinit`:
+
+```bash
+fpath+=~/.zfunc
+```
+
 ---

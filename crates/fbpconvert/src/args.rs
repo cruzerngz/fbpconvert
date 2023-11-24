@@ -31,7 +31,7 @@ pub enum MainSubCommands {
 
     /// Generate shell completions for your shell
     #[clap(arg_required_else_help = true)]
-    Generate(Completions),
+    Completions(Completions),
 }
 
 #[derive(Parser, Debug, Clone)]

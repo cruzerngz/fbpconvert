@@ -19,7 +19,7 @@ impl Execute for MainCliArgs {
         match self.command {
             MainSubCommands::Import(import) => import.execute(),
             MainSubCommands::Export(export) => export.execute(),
-            MainSubCommands::Generate(complete) => {
+            MainSubCommands::Completions(complete) => {
                 let mut app: clap::Command = MainCliArgs::command();
                 let mut fd = std::io::stdout();
 
