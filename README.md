@@ -76,7 +76,7 @@ fbpconvert completions fish > ~/.config/fish/completions/rustup.fish
 fbpconvert completions zsh > ~/.zfunc/_rustup
 
 # PowerShell v5.0+
-fbpconvert completions powershell >> $PROFILE.CurrentUserCurrentHost
+fbpconvert completions power-shell >> $PROFILE.CurrentUserCurrentHost
 ```
 
 For `zsh`, you must then add the following line in your `~/.zshrc` before `compinit`:
