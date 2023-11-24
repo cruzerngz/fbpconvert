@@ -63,17 +63,17 @@ Run `fbpconvert help` for more information
 ### Generate shell completions
 ```bash
 # Bash
-fbpconvert completions bash > ~/.local/share/bash-completion/completions/rustup
+fbpconvert completions bash > ~/.local/share/bash-completion/completions/fbpconvert
 
 # Bash (macOS/Homebrew)
-fbpconvert completions bash > $(brew --prefix)/etc/bash_completion.d/rustup.bash-completion
+fbpconvert completions bash > $(brew --prefix)/etc/bash_completion.d/fbpconvert.bash-completion
 
 # Fish
 $ mkdir -p ~/.config/fish/completions
-fbpconvert completions fish > ~/.config/fish/completions/rustup.fish
+fbpconvert completions fish > ~/.config/fish/completions/fbpconvert.fish
 
 # Zsh
-fbpconvert completions zsh > ~/.zfunc/_rustup
+fbpconvert completions zsh > ~/.zfunc/_fbpconvert
 
 # PowerShell v5.0+
 fbpconvert completions power-shell >> $PROFILE.CurrentUserCurrentHost
