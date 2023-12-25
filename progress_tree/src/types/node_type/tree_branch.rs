@@ -1,7 +1,9 @@
 use std::{collections::BTreeMap, fmt::Display};
 
 use crate::tree_blocks as blocks;
-use crate::types::{NodeType, NumLines, ProgressDisplayVariant, RwArc, TotalLines, TreeError};
+use crate::types::{
+    NodeType, NumLines, ProgressDisplayVariant, RwArc, TotalLines, TreeComplete, TreeError,
+};
 
 /// A branch in the tree.
 #[derive(Clone, Debug, Default)]
@@ -10,8 +12,9 @@ pub struct TreeBranch {
     /// Number of children immediately under the branch
     num_children: u16,
 
-    /// Number of children under **all** its constituent branches
-    num_children_all: u16,
+    pub num_children_errors: u16,
+
+    pub num_children_complete: u16,
 
     /// Progress of the branch
     pub progress: ProgressDisplayVariant,
@@ -28,15 +31,14 @@ pub struct TreeBranch {
 
 impl TotalLines for TreeBranch {
     fn total_lines(&self) -> usize {
-
         // branch does not occupy any space when complete
         if let ProgressDisplayVariant::Complete = self.progress {
-            return 0
+            return 0;
         }
 
         let mut lines: usize = 1; // the branch itself occupies 1 line
 
-        for  any_node in self.incomplete_iter() {
+        for any_node in self.incomplete_iter() {
             match any_node {
                 NodeType::Branch(_branch) => lines += _branch.read().unwrap().total_lines(),
                 NodeType::Node(_node) => lines += _node.total_lines(),
@@ -84,10 +86,45 @@ impl TreeError for TreeBranch {
                 None
             }
         };
+
+        // update errors in parent
+        if let Some(_parent) = &self.parent {
+            _parent.write().unwrap().num_children_errors += 1;
+            _parent.write().unwrap().update_internal_progress();
+        }
+    }
+}
+
+impl TreeComplete for TreeBranch {
+    fn complete(&mut self) {
+        self.progress = ProgressDisplayVariant::Complete;
+        if let Some(_parent) = &self.parent {
+            _parent.write().unwrap().num_children_complete += 1;
+            _parent.write().unwrap().update_internal_progress();
+        }
+
+        todo!()
     }
 }
 
 impl TreeBranch {
+    /// Checks internal params and updates its progress.
+    pub fn update_internal_progress(&mut self) {
+        let curr_total = self.num_children_complete + self.num_children_errors;
+
+        if curr_total < self.num_children {
+            // not complete
+            self.progress = ProgressDisplayVariant::Running;
+        } else {
+            // complete
+            if self.num_children_errors > 0 {
+                self.progress = ProgressDisplayVariant::CompleteWithError
+            } else {
+                self.progress = ProgressDisplayVariant::Complete
+            }
+        }
+    }
+
     /// Create a new instance of TreeBranch
     pub fn new<T>(name: T) -> Self
     where
@@ -111,7 +148,6 @@ impl TreeBranch {
 
         self.children.insert(item.name(), item);
         self.num_children += 1;
-        self.num_children_all += 1;
     }
 
     /// Returns the number of children immediately under itself.
@@ -151,8 +187,11 @@ impl TreeBranch {
     /// Returns an iterator over incomplete child nodes
     pub fn incomplete_iter(&self) -> impl Iterator<Item = &NodeType> {
         let _iter = self.children.iter().filter_map(|(_, _node)| {
-            if let ProgressDisplayVariant::Complete = _node.status() {None}
-            else {Some(_node)}
+            if let ProgressDisplayVariant::Complete = _node.status() {
+                None
+            } else {
+                Some(_node)
+            }
         });
 
         _iter
@@ -161,8 +200,11 @@ impl TreeBranch {
     /// Returns a mutable iterator over incomplete child nodes
     pub fn incomplete_iter_mut(&mut self) -> impl Iterator<Item = &mut NodeType> {
         let _iter = self.children.iter_mut().filter_map(|(_, _node)| {
-            if let ProgressDisplayVariant::Complete = _node.status() {None}
-            else {Some(_node)}
+            if let ProgressDisplayVariant::Complete = _node.status() {
+                None
+            } else {
+                Some(_node)
+            }
         });
 
         _iter
@@ -234,8 +276,11 @@ impl TreeBranch {
                 // substitute total_lines - 1 number of v_pipes from end of vec // panics here
                 let lines_to_remove = {
                     let _lines = _last_branch.read().unwrap().total_lines();
-                    if _lines > 0 {_lines - 1}
-                    else {0}
+                    if _lines > 0 {
+                        _lines - 1
+                    } else {
+                        0
+                    }
                 };
 
                 for _line in tree_lines.iter_mut().rev().take(lines_to_remove) {
@@ -306,7 +351,7 @@ mod test {
 
     use super::TreeBranch;
     use crate::types::{
-        NodeType, NumLines, ProgressDisplayVariant, RwArc, TotalLines, TreeError, TreeNode,
+        NodeType, NumLines, ProgressDisplayVariant, RwArc, TotalLines, TreeError, TreeNode, TreeComplete,
     };
 
     /// Creates a tree containing 10 children.
@@ -360,7 +405,6 @@ mod test {
             NodeType::Node(_node)
         });
 
-
         branch_1.insert(NodeType::new_branch("sub branch 1"));
         branch_1.insert(NodeType::new_branch("sub_branch 2"));
         branch_1.insert({
@@ -411,5 +455,28 @@ mod test {
         for _branch in bigger_tree.read().unwrap().branch_iter() {
             println!("{}", _branch.read().unwrap());
         }
+    }
+
+    #[test]
+    fn completion_tests() {
+        let tree = create_known_tree();
+        for item in tree.write().unwrap().incomplete_iter_mut() {
+            // write() called on inner function while lock held on upper
+            match item {
+                NodeType::Branch(_b) => todo!(),
+                NodeType::Node(_n) => _n.complete(),
+            }
+        }
+
+        // tree.read().unwrap().children.ke
+
+        if tree.is_poisoned() {
+            panic!("rwlock not released");
+        }
+
+        let _tree = tree.read().unwrap();
+        assert_eq!(_tree.num_children, _tree.num_children_complete);
+        assert_eq!(_tree.num_children_errors, 0);
+        assert!(matches!(_tree.progress, ProgressDisplayVariant::Complete));
     }
 }

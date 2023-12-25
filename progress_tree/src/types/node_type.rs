@@ -1,10 +1,14 @@
 mod tree_branch;
 mod tree_node;
 
+use std::fmt::Display;
+
 pub use tree_branch::TreeBranch;
 pub use tree_node::TreeNode;
 
 use crate::types::{NumLines, ProgressDisplayVariant, RwArc, TotalLines, TreeError};
+
+use super::TreeComplete;
 
 /// Type of node in the blueprint tree.
 #[derive(Clone, Debug)]
@@ -18,6 +22,41 @@ pub enum NodeType {
     ///
     /// This variant is owned by a branch.
     Node(TreeNode),
+}
+
+#[derive(Clone, Debug, Default)]
+/// A status indicator that sits between the tree branches and
+/// its contents.
+struct ProgressIndicator {
+    complete: u16,
+    total: u16,
+}
+
+impl Display for ProgressIndicator {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "[{:5}/{:5}]", self.complete, self.total)
+    }
+}
+
+#[allow(dead_code)]
+impl ProgressIndicator {
+    pub fn new(total: u16) -> Self {
+        let mut _indicator = Self::default();
+        _indicator.total = total;
+
+        _indicator
+    }
+
+    /// Adds 1 to the completed count
+    pub fn add(&mut self) {
+        if self.complete != self.total {
+            self.complete += 1
+        }
+    }
+
+    pub fn update(&mut self, count: u16) {
+        self.complete = count;
+    }
 }
 
 impl TotalLines for NodeType {
@@ -43,6 +82,15 @@ impl TreeError for NodeType {
         match self {
             NodeType::Branch(_b) => _b.write().unwrap().error(err_message),
             NodeType::Node(_n) => _n.error(err_message),
+        }
+    }
+}
+
+impl TreeComplete for NodeType {
+    fn complete(&mut self) {
+        match self {
+            NodeType::Branch(_b) => _b.write().unwrap().complete(),
+            NodeType::Node(_n) => _n.complete(),
         }
     }
 }
@@ -94,5 +142,19 @@ impl NodeType {
                 _n.progress = status;
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::ProgressIndicator;
+
+    #[test]
+    fn progress_indicator_test() {
+        let mut indicator = ProgressIndicator::new(100);
+
+        println!("{}", &indicator);
+        indicator.update(5);
+        println!("{}", &indicator);
     }
 }

@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use crate::types::{NumLines, ProgressDisplayVariant, RwArc, TotalLines, TreeError};
+use crate::types::{NumLines, ProgressDisplayVariant, RwArc, TotalLines, TreeComplete, TreeError};
 
 use crate::types::node_type::TreeBranch;
 
@@ -69,6 +69,21 @@ impl TreeError for TreeNode {
                 None
             }
         };
+
+        if let Some(_parent) = &self.parent {
+            _parent.write().unwrap().num_children_errors += 1;
+            _parent.write().unwrap().update_internal_progress();
+        }
+    }
+}
+
+impl TreeComplete for TreeNode {
+    fn complete(&mut self) {
+        self.progress = ProgressDisplayVariant::Complete;
+        if let Some(_parent) = &self.parent {
+            _parent.write().unwrap().num_children_complete += 1;
+            _parent.write().unwrap().update_internal_progress();
+        }
     }
 }
 

@@ -56,15 +56,16 @@ impl<T> Deref for RwArc<T> {
 /// The stage of progress in a node.
 #[derive(Copy, Clone, Debug)]
 pub enum ProgressDisplayVariant {
-    Waiting,
+    // Waiting,
     Running,
     Complete,
+    CompleteWithError,
     Error,
 }
 
 impl Default for ProgressDisplayVariant {
     fn default() -> Self {
-        Self::Waiting
+        Self::Running
     }
 }
 
@@ -93,6 +94,11 @@ trait NumLines {
 trait TreeError {
     /// Mark a node with an error
     fn error<T: ToString>(&mut self, err_message: Option<T>);
+}
+
+trait TreeComplete {
+    /// Mark a node as complete
+    fn complete(&mut self);
 }
 
 #[cfg(test)]
@@ -230,7 +236,10 @@ mod test {
             }
 
             println!("{}", root.read().unwrap());
-            println!("Num lines for completed children: {}", root.read().unwrap().total_lines());
+            println!(
+                "Num lines for completed children: {}",
+                root.read().unwrap().total_lines()
+            );
         }
     }
 }
